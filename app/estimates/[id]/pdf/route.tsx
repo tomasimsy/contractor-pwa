@@ -29,7 +29,7 @@ context: { params: { id: string } | Promise<{ id: string }> }
   { status: 404 }
   );
   }
-
+// Testing comment
   const { data: client } = await supabase
   .from("clients")
   .select("*")
