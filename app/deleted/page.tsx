@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { formatCurrency, formatShortDate } from "@/lib/utils/formatting";
 import Header from "@/components/ui/Header";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function DeletedPage() {
   const [deletedEstimates, setDeletedEstimates] = useState<any[]>([]);
@@ -71,6 +72,7 @@ export default function DeletedPage() {
   const totalDeleted = deletedEstimates.length + deletedInvoices.length;
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-gray-50 pb-24">
        {/* Header */}
             {/* <Header
@@ -176,5 +178,7 @@ export default function DeletedPage() {
         )}
       </div>
     </div>
+
+    </ProtectedRoute>
   );
 }

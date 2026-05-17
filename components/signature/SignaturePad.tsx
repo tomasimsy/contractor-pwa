@@ -168,7 +168,7 @@ const [signatureType, setSignatureType] = useState<"type" | "draw">("type");
           setSignatureType("draw");
           setShowModal(true);
           }}
-          className="relative z-20 mt-2 text-xs px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-gray-800
+          className="relative z-1 mt-2 text-xs px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-gray-800
           active:scale-95 transition"
           >
           Re-sign

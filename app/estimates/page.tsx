@@ -8,6 +8,7 @@ import { formatCurrency, formatShortDate } from "@/lib/utils/formatting";
 import Header from "@/components/ui/Header";
 import DeleteModal from "@/components/ui/DeleteModal";
 import { Trash2 } from "lucide-react";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function EstimatesPage() {
 const router = useRouter();
@@ -74,6 +75,7 @@ const getStatus = (est: Estimate) => {
 };
 
 return (
+  // <ProtectedRoute>
   <div className="min-h-screen bg-[#f6f7f9] pb-24">
 
     {/* HEADER */}
@@ -233,5 +235,6 @@ return (
       id={deleteModal.id}
     />
   </div>
+  // </ProtectedRoute>
 );
   }

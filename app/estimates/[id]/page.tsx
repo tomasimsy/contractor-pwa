@@ -560,18 +560,18 @@ const [estimate, setEstimate] = useState<Estimate | null>(null);
         </div>
 
         {estimate?.markup && estimate.markup > 0 && (
-          <div className="flex justify-between text-gray-600">
-            <span>Markup</span>
-            <span>+{formatCurrency(estimate.markup)}</span>
-          </div>
-        )}
+  <div className="flex justify-between text-gray-600">
+    <span>Markup</span>
+    <span>+{formatCurrency(estimate.markup)}</span>
+  </div>
+)}
 
-                {estimate?.discount && estimate.discount > 0 && (
-          <div className="flex justify-between text-gray-600">
-            <span>Discount</span>
-            <span>-{formatCurrency(estimate.discount)}</span>
-          </div>
-        )}
+        {estimate?.discount && estimate.discount > 0 && (
+  <div className="flex justify-between text-gray-600">
+    <span>Discount</span>
+    <span>-{formatCurrency(estimate.discount)}</span>
+  </div>
+)}
 
  
 
@@ -680,13 +680,11 @@ const [estimate, setEstimate] = useState<Estimate | null>(null);
     </button>
 
     {/* PDF */}
-    <Link
+{/* PDF */}
+<Link
   href={`/api/estimates/${id}/pdf`}
   target="_blank"
-  onClick={() => setFabOpen(false)}
-  className={`transition-all duration-200 origin-bottom-right
-    ${fabOpen ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-95 pointer-events-none h-0 overflow-hidden"}
-  `}
+  rel="noopener noreferrer"
 >
   <button className="flex items-center gap-2 rounded-xl text-green-900 bg-white px-3 py-2 text-sm shadow-md border border-gray-200 hover:bg-gray-50">
     <FileText size={14}/> PDF

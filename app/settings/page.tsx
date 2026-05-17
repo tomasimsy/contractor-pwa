@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import Header from "@/components/ui/Header";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-[#f6f7f9] pb-24">
       <Header title="Settings" backLink="/" />
 
@@ -220,5 +223,6 @@ export default function SettingsPage() {
         </button>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

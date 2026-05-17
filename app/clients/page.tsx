@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Client } from "@/types";
 import Header from "@/components/ui/Header";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 
 export default function ClientsPage() {
 const [clients, setClients] = useState<Client[]>([]);
@@ -24,6 +26,7 @@ const [clients, setClients] = useState<Client[]>([]);
   }
 
 return (
+  <ProtectedRoute>
   <div className="min-h-screen bg-[#f6f7f9] pb-24">
     <Header title="Clients" backLink="/" />
 
@@ -123,5 +126,7 @@ return (
       </div>
     </div>
   </div>
+
+  </ProtectedRoute>
 );
   }

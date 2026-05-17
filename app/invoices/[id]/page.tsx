@@ -11,6 +11,8 @@ import SignaturePad from "@/components/signature/SignaturePad";
 import PaymentModal from "@/components/payments/PaymentModal";
 import Link from "next/link";
 import { useCompanySettings } from "@/lib/hooks/useCompanySettings";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 
 export default function InvoicePage() {
   const router = useRouter();
@@ -134,6 +136,7 @@ export default function InvoicePage() {
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-[#f6f7f9] pb-20">
 
       {/* HEADER */}
@@ -313,5 +316,6 @@ export default function InvoicePage() {
 
       
     </div>
+    </ProtectedRoute>
   );
 }

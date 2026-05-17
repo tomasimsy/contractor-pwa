@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 
 export default function InvoicePage() {
   const { id } = useParams();
@@ -104,11 +106,14 @@ export default function InvoicePage() {
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
         <div className="text-lg">Converting to invoice...</div>
         <div className="text-sm text-gray-500 mt-2">Please wait</div>
       </div>
     </div>
+
+    </ProtectedRoute>
   );
 }

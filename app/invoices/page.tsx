@@ -7,6 +7,8 @@ import { Invoice } from "@/types";
 import { formatCurrency, formatShortDate } from "@/lib/utils/formatting";
 import Header from "@/components/ui/Header";
 import { Trash2 } from "lucide-react";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 
 export default function InvoicesPage() {
 const router = useRouter();
@@ -55,6 +57,7 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
   
   
   return (
+    <ProtectedRoute>
   <div className="min-h-screen bg-[#f6f7f9] pb-24">
 
     {/* HEADER */}
@@ -200,5 +203,7 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
       </div>
     </div>
   </div>
+
+</ProtectedRoute>
 );
     }

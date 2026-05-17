@@ -1,60 +1,80 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, FileText, CreditCard, Users, Trash2 , Settings} from "lucide-react";
- 
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { Home, FileText, CreditCard, Users, Settings } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      setLoading(false);
+      if (!session) {
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsLoggedIn(!!session);
+    setLoading(false);
+  }
+
+  const hideNavPages = ["/login", "/signup", "/"];
+  
+  if (loading) return null;
+  if (!isLoggedIn) return null;
+  if (hideNavPages.includes(pathname)) return null;
 
   const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Estimates", href: "/estimates", icon: FileText },
-    { name: "Invoices", href: "/invoices", icon: CreditCard },
-    { name: "Clients", href: "/clients", icon: Users },
-    { name: "Settings", href: "/settings", icon: Settings },
-
-];    
+    { name: "Home", href: "/dashboard", icon: Home, activeIcon: Home },
+    { name: "Estimates", href: "/estimates", icon: FileText, activeIcon: FileText },
+    { name: "Invoices", href: "/invoices", icon: CreditCard, activeIcon: CreditCard },
+    { name: "Clients", href: "/clients", icon: Users, activeIcon: Users },
+    { name: "Settings", href: "/settings", icon: Settings, activeIcon: Settings },
+  ];
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/dashboard") return pathname === href;
     return pathname.startsWith(href);
   };
 
   return (
-<div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-2 z-50 shadow-lg">
-  <div className="w-full max-w-md mx-auto  bg-white flex justify-around px-4">
-
+<div className="fixed bottom-0 left-0 right-0 border-t bg-primary border-gray-200 z-2   shadow-lg">
+  <div className="w-full max-w-md mx-auto  bg-white flex justify-around px-4 ">
         {navItems.map((item) => {
           const active = isActive(item.href);
-          const Icon = item.icon;
-
+          const IconComponent = active ? item.activeIcon : item.icon;
+          
           return (
             <Link
               key={item.name}
               href={item.href}
-              className="flex flex-col items-center justify-center gap-1 w-full py-1"
+              className={`flex flex-col items-center gap-1 px-3 py-1 rounded-lg transition-all duration-200 ${
+                active ? "bg-navy/5" : "hover:bg-gray-50"
+              }`}
             >
-              <Icon
+              <IconComponent
                 size={20}
                 className={`transition-colors ${
                   active ? "text-gold" : "text-gray-400"
                 }`}
               />
-
-              <span
-                className={`text-[10px] font-medium transition-colors ${
-                  active ? "text-gold" : "text-gray-400"
-                }`}
-              >
+              <span className={`text-xs font-medium ${active ? "text-gold" : "text-gray-500"}`}>
                 {item.name}
               </span>
-
-              {/* active dot */}
-              {active && (
-                <div className="w-1 h-1 bg-gold rounded-full mt-0.5" />
-              )}
             </Link>
           );
         })}

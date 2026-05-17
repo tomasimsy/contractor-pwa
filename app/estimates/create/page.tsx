@@ -11,6 +11,7 @@ import LineItemsEditor from "@/components/forms/LineItemsEditor";
 import { calculateSubtotal, calculateTax, calculateTotal } from "@/lib/utils/calculations";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { generateDocumentNumber } from "@/lib/utils/documentNumber";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 
 export default function CreateEstimate() {
@@ -89,6 +90,7 @@ export default function CreateEstimate() {
   };
 
 return (
+  <ProtectedRoute>
   <div className="min-h-screen bg-[#f6f7f9] pb-10">
 
     {/* HEADER */}
@@ -181,5 +183,6 @@ return (
 
     </div>
   </div>
+  </ProtectedRoute>
 );
 }
