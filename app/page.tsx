@@ -5,6 +5,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { formatCurrency, formatShortDate } from "@/lib/utils/formatting";
 import Header from "@/components/ui/Header";
+import Image from "next/image";
+
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -118,6 +120,19 @@ export default function Dashboard() {
         </Link>
 
       </div>
+       
+       {/* IMAGE  */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+         <div className="relative w-full h-48 mb-6">
+  <Image
+    src="/hero.jpeg"  // Place image in public folder
+    alt="Hero"
+    fill
+    className="object-cover rounded-xl"
+    priority
+  />
+</div>
+       </div>
 
       {/* OVERVIEW */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
