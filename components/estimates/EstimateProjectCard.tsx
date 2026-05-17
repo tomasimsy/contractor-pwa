@@ -1,4 +1,29 @@
-export function EstimateProjectCard({ project }) {
+interface LineItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+interface ProjectImage {
+  id: string;
+  url: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  mainImageUrl?: string;
+  images: ProjectImage[];
+  lineItems: LineItem[];
+}
+
+interface EstimateProjectCardProps {
+  project: Project;
+}
+
+export function EstimateProjectCard({ project }: EstimateProjectCardProps) {
   const total = project.lineItems.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
@@ -14,27 +39,38 @@ export function EstimateProjectCard({ project }) {
 
       {/* Main Image */}
       {project.mainImageUrl && (
-        <img src={project.mainImageUrl} className="w-full rounded mb-3" />
+        <img 
+          src={project.mainImageUrl} 
+          className="w-full rounded mb-3" 
+          alt={project.name}
+        />
       )}
 
       {/* Gallery */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {project.images.map(img => (
-          <img key={img.id} src={img.url} className="rounded" />
-        ))}
-      </div>
+      {project.images.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {project.images.map((img) => (
+            <img 
+              key={img.id} 
+              src={img.url} 
+              className="rounded w-full h-24 object-cover" 
+              alt="Project"
+            />
+          ))}
+        </div>
+      )}
 
       {/* Line Items */}
       <div className="border-t pt-3">
-        {project.lineItems.map(item => (
-          <div key={item.id} className="flex justify-between mb-2">
+        {project.lineItems.map((item) => (
+          <div key={item.id} className="flex justify-between mb-2 text-sm">
             <span>{item.name}</span>
             <span>${(item.quantity * item.unitPrice).toFixed(2)}</span>
           </div>
         ))}
       </div>
 
-      <div className="flex justify-between font-bold text-lg mt-3">
+      <div className="flex justify-between font-bold text-lg mt-3 pt-2 border-t">
         <span>Project Total</span>
         <span>${total.toFixed(2)}</span>
       </div>
