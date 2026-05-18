@@ -12,6 +12,7 @@ import PaymentModal from "@/components/payments/PaymentModal";
 import Link from "next/link";
 import { useCompanySettings } from "@/lib/hooks/useCompanySettings";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { Trash2 } from "lucide-react";
 
 export default function InvoicePage() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function InvoicePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, paymentId: "", amount: 0 });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
 
@@ -124,6 +125,56 @@ export default function InvoicePage() {
     setShowPaymentModal(false);
   };
 
+ 
+// Add delete function
+const deletePayment = async (paymentId: string) => {
+  if (!confirm("Are you sure you want to delete this payment record? This action cannot be undone.")) {
+    return;
+  }
+  
+  try {
+    // Get the payment amount before deleting
+    const { data: payment } = await supabase
+      .from("invoice_payments")
+      .select("amount")
+      .eq("id", paymentId)
+      .single();
+    
+    if (!payment) return;
+    
+    // Delete the payment
+    const { error: deleteError } = await supabase
+      .from("invoice_payments")
+      .delete()
+      .eq("id", paymentId);
+    
+    if (deleteError) throw deleteError;
+    
+    // Recalculate totals
+    const newTotalPaid = totalPaid - payment.amount;
+    const newRemainingBalance = (invoice?.total || 0) - newTotalPaid;
+    const newStatus = newRemainingBalance === 0 ? "paid" : newRemainingBalance === (invoice?.total || 0) ? "pending" : "partial";
+    
+    // Update invoice
+    await supabase
+      .from("invoices")
+      .update({
+        amount_paid: newTotalPaid,
+        remaining_balance: newRemainingBalance,
+        status: newStatus
+      })
+      .eq("id", id);
+    
+    alert("Payment deleted successfully!");
+    loadInvoice(); // Refresh the page
+  } catch (err) {
+    console.error("Error deleting payment:", err);
+    alert("Error deleting payment");
+  }
+};
+
+
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">
@@ -131,6 +182,8 @@ export default function InvoicePage() {
       </div>
     );
   }
+
+
 
   return (
     <ProtectedRoute>
@@ -152,25 +205,35 @@ export default function InvoicePage() {
 
         <div className="mx-auto max-w-4xl space-y-4 p-4">
           {/* STATUS BAR */}
-          <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div>
-              <div className="text-[11px] uppercase text-gray-400">Invoice</div>
-              <div className="text-sm font-semibold text-gray-800">
-                #{invoice?.invoice_number || id?.slice(0, 8)}
-              </div>
-            </div>
-            <span
-              className={`rounded-full px-3 py-1 text-[11px] font-medium ${
-                isPaid
-                  ? "bg-green-100 text-green-700"
-                  : isOverdue
-                  ? "bg-red-100 text-red-700"
-                  : "bg-yellow-100 text-yellow-700"
-              }`}
-            >
-              {isPaid ? "Paid" : isOverdue ? "Overdue" : "Pending"}
-            </span>
-          </div>
+<div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+  <div className="flex items-center justify-between px-4 py-3">
+    <div>
+      <div className="text-[10px] uppercase tracking-wide text-gray-400">Invoice</div>
+      <div className="text-sm font-semibold text-navy">
+        #{invoice?.invoice_number || id?.slice(0, 8)}
+      </div>
+    </div>
+    <span className={`px-2.5 py-1 rounded-full text-[10px] font-medium ${
+      isPaid ? "bg-green-50 text-green-700" :
+      isOverdue ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+    }`}>
+      {isPaid ? "Paid" : isOverdue ? "Overdue" : "Pending"}
+    </span>
+  </div>
+  <div className="flex items-between gap-4 px-4 py-2 border-t border-gray-50 text-xs">
+    <div className="flex items-center gap-1.5">
+       <span className="text-gray-500">Issued:</span>
+      <span className="text-gray-700">{formatDate(invoice?.issue_date)}</span>
+    </div>
+    <div className="text-gray-200">|</div>
+    <div className="flex items-center gap-1.5">
+       <span className="text-gray-500">Due:</span>
+      <span className={isOverdue ? "text-red-600 font-medium" : "text-gray-700"}>
+        {formatDate(invoice?.due_date)}
+      </span>
+    </div>
+  </div>
+</div>
 
           {/* COMPANY + CLIENT + DATES */}
           <Card>
@@ -194,18 +257,7 @@ export default function InvoicePage() {
                     <div className="text-sm text-gray-500">{client?.email}</div>
                   </div>
 
-                  <div className="mt-4 w-full max-w-xs space-y-2 text-sm">
-                    <div className="flex justify-end">
-                      <span className="text-gray-500">Issue Date: </span>
-                      <span>{formatDate(invoice?.issue_date)}</span>
-                    </div>
-                    <div className="flex justify-end">
-                      <span className="text-gray-500">Due Date: </span>
-                      <span className={isOverdue ? "text-red-600 font-medium" : ""}>
-                        {formatDate(invoice?.due_date)}
-                      </span>
-                    </div>
-                  </div>
+                  
                 </div>
               </div>
             </div>
@@ -262,22 +314,34 @@ export default function InvoicePage() {
           </Card>
 
           {/* PAYMENT HISTORY */}
+          {/* Payment History */}
           {payments.length > 0 && (
-            <Card title="Payment History">
+            <div className="bg-white rounded-xl p-4 shadow-md">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-semibold text-navy">Payment History</h3>
+                <span className="text-xs text-gray-400">{payments.length} payment(s)</span>
+              </div>
               <div className="space-y-2">
                 {payments.map((payment) => (
-                  <div key={payment.id} className="flex justify-between text-sm border-b pb-2">
+                  <div key={payment.id} className="flex justify-between items-center border-b pb-2">
                     <div>
-                      <span className="font-medium">{formatCurrency(payment.amount)}</span>
-                      <span className="text-gray-500 ml-2 capitalize">({payment.method})</span>
+                      <div className="font-medium">{formatCurrency(payment.amount)}</div>
+                      <div className="text-xs text-gray-500 capitalize">{payment.method}</div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(payment.created_at).toLocaleDateString()}
+                      </div>
                     </div>
-                    <div className="text-gray-500">
-                      {new Date(payment.created_at).toLocaleDateString()}
-                    </div>
+                    <button
+                      onClick={() => deletePayment(payment.id)}
+                      className="p-1 text-gray-400 hover:text-red-500 transition"
+                      title="Delete payment"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           )}
 
           {/* PAY BUTTON */}
