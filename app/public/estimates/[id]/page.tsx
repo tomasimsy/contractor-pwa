@@ -64,12 +64,27 @@ export default function PublicEstimatePage() {
       setSigned(true);
       setSignature(newSignature);
       alert("Thank you! Your signature has been saved.");
-      // Reload to show signature
       loadEstimate();
     } else {
       alert("Error saving signature. Please try again.");
     }
   };
+
+  // Group items by project
+  const projectMap: Record<string, any[]> = {};
+  items.forEach(item => {
+    const projectName = item.project_name || "Main Project";
+    if (!projectMap[projectName]) {
+      projectMap[projectName] = [];
+    }
+    projectMap[projectName].push(item);
+  });
+
+  const projects = Object.entries(projectMap).map(([name, items]) => ({
+    name,
+    items,
+    total: items.reduce((sum, i) => sum + (i.total || 0), 0)
+  }));
 
   const subtotal = items.reduce((sum, i) => sum + (i.total || 0), 0);
   const depositAmount = estimate?.deposit_amount || subtotal * 0.5;
@@ -102,6 +117,7 @@ export default function PublicEstimatePage() {
         <h1 className="text-xl font-bold">One Square Roof LLC</h1>
         <p className="text-sm text-gold mt-1">Licensed & Insured</p>
         <p className="text-xs text-gray-300 mt-2">Estimate #{estimate?.estimate_number || id?.slice(0, 8)}</p>
+        <p className="text-xs text-gray-300">Issued: {new Date(estimate?.created_at).toLocaleDateString()}</p>
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4 pb-24">
@@ -113,6 +129,17 @@ export default function PublicEstimatePage() {
           </p>
         </div>
 
+        {/* Customer Info */}
+        <div className="bg-white rounded-xl p-4 shadow-md">
+          <h3 className="font-semibold text-navy mb-2">Customer Information</h3>
+          <div className="space-y-1 text-sm">
+            <p><span className="font-medium">Name:</span> {client?.name}</p>
+            {client?.phone && <p><span className="font-medium">Phone:</span> {client.phone}</p>}
+            {client?.email && <p><span className="font-medium">Email:</span> {client.email}</p>}
+            {client?.address && <p><span className="font-medium">Address:</span> {client.address}</p>}
+          </div>
+        </div>
+
         {/* Description */}
         {estimate?.description && (
           <div className="bg-white rounded-xl p-4 shadow-md">
@@ -121,49 +148,91 @@ export default function PublicEstimatePage() {
           </div>
         )}
 
-        {/* Items */}
-        <div className="bg-white rounded-xl p-4 shadow-md">
-          <h3 className="font-semibold text-navy mb-3">Estimate Details</h3>
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div key={item.id} className="flex justify-between border-b pb-2">
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-xs text-gray-500">{item.category}</div>
-                  {item.description && (
-                    <div className="text-sm text-gray-500">{item.description}</div>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold">{formatCurrency(item.total)}</div>
-                  <div className="text-xs text-gray-400">
-                    {item.quantity} × {formatCurrency(item.unit_price)}
+        {/* Projects and Items */}
+        {projects.map((project) => (
+          <div key={project.name} className="bg-white rounded-xl p-4 shadow-md">
+            <h3 className="font-semibold text-navy mb-3">{project.name}</h3>
+            <div className="space-y-2">
+              {project.items.map((item) => (
+                <div key={item.id} className="flex justify-between border-b pb-2">
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-xs text-gray-500">{item.category}</div>
+                    {item.description && (
+                      <div className="text-sm text-gray-500">{item.description}</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold">{formatCurrency(item.total)}</div>
+                    <div className="text-xs text-gray-400">
+                      {item.quantity} × {formatCurrency(item.unit_price)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="mt-3 pt-2 border-t text-right font-semibold">
+              Project Total: {formatCurrency(project.total)}
+            </div>
           </div>
-          
-          <div className="mt-4 pt-3 border-t flex justify-between font-bold">
-            <span>Total</span>
-            <span className="text-gold">{formatCurrency(subtotal)}</span>
+        ))}
+
+        {/* Summary */}
+        <div className="bg-white rounded-xl p-4 shadow-md">
+          <h3 className="font-semibold text-navy mb-3">Estimate Summary</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>Subtotal:</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            {estimate?.markup > 0 && (
+              <div className="flex justify-between">
+                <span>Markup:</span>
+                <span>{formatCurrency(estimate.markup)}</span>
+              </div>
+            )}
+            {estimate?.discount > 0 && (
+              <div className="flex justify-between">
+                <span>Discount:</span>
+                <span>-{formatCurrency(estimate.discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between pt-2 border-t font-bold">
+              <span>Total Estimate:</span>
+              <span className="text-gold">{formatCurrency(subtotal)}</span>
+            </div>
           </div>
         </div>
 
         {/* Deposit Info */}
         {depositAmount > 0 && !signed && (
           <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-            <h3 className="font-semibold text-amber-800 mb-2">Deposit Required</h3>
-            <div className="flex justify-between">
-              <span>Deposit Amount (50%):</span>
-              <span className="font-bold">{formatCurrency(depositAmount)}</span>
-            </div>
-            <div className="flex justify-between mt-1">
-              <span>Balance Due:</span>
-              <span>{formatCurrency(balanceDue)}</span>
+            <h3 className="font-semibold text-amber-800 mb-2">Deposit & Payment</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>Deposit Required (50%):</span>
+                <span className="font-bold">{formatCurrency(depositAmount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Balance Due Upon Completion:</span>
+                <span>{formatCurrency(balanceDue)}</span>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Terms & Conditions */}
+        <div className="bg-white rounded-xl p-4 shadow-md">
+          <h3 className="font-semibold text-navy mb-2">Terms & Conditions</h3>
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>1. This estimate is valid for 30 days from the date issued.</p>
+            <p>2. A 50% deposit is required to begin work. Remaining balance due upon completion.</p>
+            <p>3. Any changes or additions to scope must be approved in writing and may incur additional charges.</p>
+            <p>4. Client is responsible for providing safe access to work areas.</p>
+            <p>5. By signing below, you agree to all terms and conditions stated in this estimate.</p>
+            <p className="mt-3 text-xs text-gray-400">One Square Roof LLC is licensed and insured in North Carolina.</p>
+          </div>
+        </div>
 
         {/* Signature Section */}
         <div className="bg-white rounded-xl p-4 shadow-md">
@@ -173,7 +242,7 @@ export default function PublicEstimatePage() {
             <div className="text-center py-6 bg-green-50 rounded-lg border border-green-200">
               <div className="text-3xl mb-2">✅</div>
               <div className="font-semibold text-green-700">Thank You!</div>
-              <div className="text-sm text-green-600 mt-1">This estimate has been signed.</div>
+              <div className="text-sm text-green-600 mt-1">This estimate has been signed and approved.</div>
               {signature && (
                 <div className="mt-3 text-sm">
                   {signature.type === "type" ? (
@@ -188,18 +257,22 @@ export default function PublicEstimatePage() {
               )}
             </div>
           ) : (
-            <SignaturePad
-              onSave={saveSignature}
-              existingSignature={null}
-              buttonText="Sign & Approve Estimate"
-            />
+            <>
+              <p className="text-sm text-gray-500 mb-3">By signing below, you agree to the terms and conditions above.</p>
+              <SignaturePad
+                onSave={saveSignature}
+                existingSignature={null}
+                buttonText="Sign & Approve Estimate"
+              />
+            </>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="text-center text-xs text-gray-400 py-4">
+        {/* Company Footer */}
+        <div className="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
           <p>One Square Roof LLC • Charlotte, NC • (704) 303-4112</p>
-          <p className="mt-1">By signing, you agree to the terms above.</p>
+          <p className="mt-1">onesquareroof@gmail.com</p>
+          <p className="mt-2">© {new Date().getFullYear()} One Square Roof LLC. All rights reserved.</p>
         </div>
       </div>
     </div>
