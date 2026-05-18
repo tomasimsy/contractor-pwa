@@ -217,7 +217,7 @@ const [estimate, setEstimate] = useState<Estimate | null>(null);
           const editTotal = calculateTotal(editSubtotal, editMarkup, editDiscount, editTax);
 
           // Add this function in your component for SMS
-          const sendSMS = () => {
+          const sendSMSLink = () => {
           const phoneNumber = client?.phone;
           if (!phoneNumber) {
           alert("No phone number on file. Please add a phone number to this client first.");
@@ -226,27 +226,16 @@ const [estimate, setEstimate] = useState<Estimate | null>(null);
 
           const baseUrl = window.location.origin;
           const documentUrl = `${baseUrl}/public/estimates/${id}`;
-
-          // Calculate total from projects or estimate
-          let totalAmount = 0;
-          if (isEditMode) {
-          // In edit mode, use editProjects
-          totalAmount = editProjects.reduce((sum, p) =>
+          const total = projects.reduce((sum, p) =>
           sum + p.line_items.reduce((s, i) => s + (i.total || 0), 0), 0);
-          } else {
-          // In view mode, use projects
-          totalAmount = projects.reduce((sum, p) =>
-          sum + p.line_items.reduce((s, i) => s + (i.total || 0), 0), 0);
-          }
 
           const message = encodeURIComponent(
-          `Hello ${client?.name || "Customer"}! Please review and sign your estimate: ${documentUrl}\n\n` +
-          `Estimate #${estimate?.id?.slice(0, 8)}\n` +
-          `Total: $${totalAmount.toFixed(2)}\n\n` +
+          `Hello ${client?.name}! Please review and sign your estimate: ${documentUrl}\n\n` +
+          `Estimate #${estimate?.estimate_number || id.slice(0, 8)}\n` +
+          `Total: $${total.toFixed(2)}\n\n` +
           `Click the link above to view and sign. Thank you!`
           );
 
-          // Open SMS app
           window.location.href = `sms:${phoneNumber}?body=${message}`;
           };
 
@@ -667,17 +656,12 @@ const [estimate, setEstimate] = useState<Estimate | null>(null);
 
     {/* SMS */}
     <button
-      onClick={() => {
-        sendSMS();
-        setFabOpen(false);
-      }}
-      className={`flex items-center gap-2 rounded-xl bg-white text-green-900 px-3 py-2 text-sm shadow-md border border-gray-200 hover:bg-gray-50
-        transition-all duration-200 origin-bottom-right
-        ${fabOpen ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-95 pointer-events-none h-0 overflow-hidden"}
-      `}
-    >
-      <Send size={14}/> SMS
-    </button>
+  onClick={sendSMSLink}
+  className="bg-gold text-navy p-2 rounded-lg"
+  title="Send via SMS"
+>
+  📱 Send SMS
+</button>
 
     {/* PDF */}
 {/* PDF */}

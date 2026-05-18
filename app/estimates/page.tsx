@@ -9,6 +9,7 @@ import Header from "@/components/ui/Header";
 import DeleteModal from "@/components/ui/DeleteModal";
 import { Trash2 } from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { MessageSquare } from "lucide-react";
 
 export default function EstimatesPage() {
 const router = useRouter();
@@ -208,6 +209,39 @@ return (
                     <Trash2 size={12} />
                     Delete
                   </button>
+
+                  {/* // Add SMS button to each estimate card */}
+                  
+
+                <button
+                  onClick={() => {
+                    const phone = estimate.clients?.phone;
+
+                    if (!phone) {
+                      alert("No phone number");
+                      return;
+                    }
+
+                    const url = `${window.location.origin}/public/estimates/${estimate.id}`;
+
+                    window.location.href = `sms:${phone}?body=${encodeURIComponent(
+                      `Please sign your estimate: ${url}`
+                    )}`;
+                  }}
+                  className="
+                    flex items-center justify-center
+    w-9 h-9
+    rounded-full
+    bg-green-100
+    text-green-600
+    hover:bg-green-200
+    active:scale-95
+    transition
+    shadow-sm
+                  "
+                >
+                  <MessageSquare size={18} />
+                </button>
                 </div>
 
               </div>

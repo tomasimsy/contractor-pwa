@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
- 
+ import InstallPWA from "@/components/InstallPWA";
+
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -236,6 +237,8 @@ export default function HomePage() {
             <span>OSR Pros LLC</span>
           </div>
         </div>
+                  <InstallPWA />
+        
       </div>
     </div>
   );

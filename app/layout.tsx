@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/ui/BottomNav";
-import InstallPWA from "@/components/InstallPWA";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,11 +32,15 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#d4a048" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <title>One Square Roof - Estimates & Invoices</title>
+        <meta name="description" content="Manage your roofing estimates and invoices on the go" />
       </head>
-      <body className={`${inter.className} bg-gray-50`}>
-        {children}
-        <BottomNav />
-        <InstallPWA />
+      <body className={`${inter.className} bg-gray-200 flex justify-center`}>
+        <div className="w-full max-w-[430px] min-h-screen bg-gray-50 shadow-xl relative">
+          {children}
+          <BottomNav />
+         </div>
       </body>
     </html>
   );

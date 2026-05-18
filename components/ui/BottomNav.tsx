@@ -52,7 +52,7 @@ export default function BottomNav() {
   };
 
   return (
-<div className="fixed bottom-0 left-0 right-0 border-t bg-primary border-gray-200 z-2   shadow-lg">
+<div className="fixed bottom-0 left-0 right-0 border-t bg-primary border-gray-200 z-2    shadow-lg">
   <div className="w-full max-w-md mx-auto  bg-white flex justify-around px-4 ">
         {navItems.map((item) => {
           const active = isActive(item.href);
