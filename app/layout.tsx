@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/ui/BottomNav";
+import InstallPWA from "@/components/InstallPWA";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-50`}>
         {children}
         <BottomNav />
+        <InstallPWA />
       </body>
     </html>
   );
