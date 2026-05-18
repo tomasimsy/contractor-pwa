@@ -141,10 +141,26 @@ const [estimate, setEstimate] = useState<any>(null);
             </div>
 
             {/* Description */}
-            {estimate?.description && (
-            <div className="bg-gray-50 rounded-xl px-5 py-4 border border-gray-200   text-[12px] ">
-              <span className="bold">Project Desription:</span> <p className=" text-gray-600 italic">{estimate.description}</p>
-            </div>
+            {(estimate?.description || estimate?.notes) && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-5">
+                
+                {estimate?.description && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                      Description
+                    </h3>
+
+                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                        {estimate.description}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                
+                
+              </div>
             )}
 
             {/* Items Table */}
@@ -220,7 +236,21 @@ const [estimate, setEstimate] = useState<any>(null);
 
             {/* Terms */}
             <div className="text-xs text-gray-500 px-1 text-center">
-              <p>✓ Valid for 30 days • 50% deposit required to begin work</p>
+              
+              {estimate?.notes && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2 tracking-wide uppercase">
+                      Notes
+                    </h3>
+
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line italic">
+                        {estimate.notes}
+                      </p>
+                    </div>
+                    
+                  </div>
+                )}
             </div>
 
             {/* Signature */}
