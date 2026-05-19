@@ -5,11 +5,13 @@ import { Signature } from "@/types";
 
 interface SignaturePadProps {
   onSave: (signature: Signature) => void;
-  onRemove?: () => void;  // New optional prop for removing signature
+  onRemove?: () => void;
   existingSignature?: Signature | null;
   buttonText?: string;
-  showRemoveButton?: boolean;  // New prop to control remove button visibility
+  showRemoveButton?: boolean;
 }
+
+const BRAND_GREEN = "#0e542c";
 
 export default function SignaturePad({
   onSave,
@@ -29,7 +31,7 @@ export default function SignaturePad({
 
   useEffect(() => {
     if (showModal && signatureType === "draw") {
-      initCanvas();
+      setTimeout(() => initCanvas(), 50);
     }
   }, [showModal, signatureType]);
 
@@ -37,8 +39,10 @@ export default function SignaturePad({
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    canvas.width = canvas.offsetWidth;
+    canvas.width = 400;
     canvas.height = 150;
+    canvas.style.width = "100%";
+    canvas.style.height = "auto";
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -53,20 +57,15 @@ export default function SignaturePad({
     ctxRef.current = ctx;
   };
 
-  const startDrawing = (e: any) => {
-    if (!canvasRef.current || !ctxRef.current) return;
-
-    setIsDrawing(true);
-
+  const getCanvasCoordinates = (e: any) => {
+    if (!canvasRef.current) return null;
+    
     const canvas = canvasRef.current;
-    const ctx = ctxRef.current;
     const rect = canvas.getBoundingClientRect();
-
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-
+    
     let clientX, clientY;
-
     if ("touches" in e) {
       clientX = e.touches[0].clientX;
       clientY = e.touches[0].clientY;
@@ -74,42 +73,43 @@ export default function SignaturePad({
       clientX = e.clientX;
       clientY = e.clientY;
     }
-
+    
     const x = (clientX - rect.left) * scaleX;
     const y = (clientY - rect.top) * scaleY;
+    
+    return {
+      x: Math.min(Math.max(0, x), canvas.width),
+      y: Math.min(Math.max(0, y), canvas.height)
+    };
+  };
 
+  const startDrawing = (e: any) => {
+    if (!canvasRef.current || !ctxRef.current) return;
+    e.preventDefault();
+    
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    setIsDrawing(true);
+    const ctx = ctxRef.current;
+    
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo(coords.x, coords.y);
   };
 
   const draw = (e: any) => {
     if (!isDrawing || !canvasRef.current || !ctxRef.current) return;
     e.preventDefault();
-
-    const canvas = canvasRef.current;
+    
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+    
     const ctx = ctxRef.current;
-    const rect = canvas.getBoundingClientRect();
-
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    let clientX, clientY;
-
-    if ("touches" in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
-
-    ctx.lineTo(x, y);
+    
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo(coords.x, coords.y);
   };
 
   const stopDrawing = () => setIsDrawing(false);
@@ -123,7 +123,6 @@ export default function SignaturePad({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     setTypedName("");
   };
 
@@ -147,6 +146,9 @@ export default function SignaturePad({
 
     setShowModal(false);
     setTypedName("");
+    if (canvasRef.current && ctxRef.current) {
+      clearCanvas();
+    }
   };
 
   const handleRemove = () => {
@@ -189,7 +191,8 @@ export default function SignaturePad({
               setSignatureType("draw");
               setShowModal(true);
             }}
-            className="relative z-1 mt-2 text-xs px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-gray-800 active:scale-95 transition"
+            className="mt-2 text-xs px-3 py-1 rounded-lg text-white transition-all duration-200 hover:shadow-md hover:brightness-110 active:scale-[0.97]"
+            style={{ backgroundColor: BRAND_GREEN }}
           >
             Re-sign
           </button>
@@ -229,7 +232,8 @@ export default function SignaturePad({
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="w-full py-2.5 rounded-xl border border-dashed border-gray-300 bg-white text-gray-600 text-sm hover:border-gray-400 hover:text-gray-800 transition"
+        className="w-full py-2.5 rounded-xl text-sm text-white transition active:scale-95"
+        style={{ backgroundColor: BRAND_GREEN }}
       >
         ✍️ {buttonText}
       </button>
@@ -237,7 +241,7 @@ export default function SignaturePad({
       {/* ---------------- MODAL ---------------- */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md p-5 shadow-lg">
+          <div className="bg-white rounded-xl w-full max-w-md p-5 shadow-lg border border-green-100">
             <h3 className="text-base font-semibold text-gray-900 mb-3">
               Customer Signature
             </h3>
@@ -248,9 +252,14 @@ export default function SignaturePad({
                 onClick={() => setSignatureType("type")}
                 className={`flex-1 py-2 text-sm rounded-lg transition ${
                   signatureType === "type"
-                    ? "bg-gray-900 text-white"
+                    ? "text-white"
                     : "bg-gray-100 text-gray-600"
                 }`}
+                style={
+                  signatureType === "type"
+                    ? { backgroundColor: BRAND_GREEN }
+                    : undefined
+                }
               >
                 Type
               </button>
@@ -258,9 +267,14 @@ export default function SignaturePad({
                 onClick={() => setSignatureType("draw")}
                 className={`flex-1 py-2 text-sm rounded-lg transition ${
                   signatureType === "draw"
-                    ? "bg-gray-900 text-white"
+                    ? "text-white"
                     : "bg-gray-100 text-gray-600"
                 }`}
+                style={
+                  signatureType === "draw"
+                    ? { backgroundColor: BRAND_GREEN }
+                    : undefined
+                }
               >
                 Draw
               </button>
@@ -273,14 +287,19 @@ export default function SignaturePad({
                 placeholder="Type full name"
                 value={typedName}
                 onChange={(e) => setTypedName(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+                className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:outline-none"
+                style={{ outlineColor: BRAND_GREEN }}
                 autoFocus
               />
             ) : (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div 
+                className="border border-gray-200 rounded-lg overflow-hidden"
+                onTouchMove={(e) => e.preventDefault()}
+              >
                 <canvas
                   ref={canvasRef}
-                  className="w-full h-36 bg-white"
+                  className="w-full bg-white touch-none"
+                  style={{ height: "150px", cursor: "crosshair" }}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}
@@ -307,9 +326,10 @@ export default function SignaturePad({
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 py-2 text-sm rounded-lg bg-gray-900 text-white hover:bg-gray-800"
+                className="flex-1 py-2 text-sm rounded-lg text-white transition hover:brightness-110 active:scale-[0.98]"
+                style={{ backgroundColor: BRAND_GREEN }}
               >
-                Save
+                Save Signature
               </button>
             </div>
           </div>
