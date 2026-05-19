@@ -117,7 +117,7 @@ const [estimate, setEstimate] = useState<any>(null);
             {/* COMPANY + CUSTOMER (SINGLE COMPACT BLOCK) */}
             <div className="bg-green-900 text-white rounded-xl p-3 shadow-sm">
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-gray-300">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-2 text-gray-300">
 
                 {/* Customer Side */}
                 <div className="flex items-start gap-3">
@@ -150,11 +150,11 @@ const [estimate, setEstimate] = useState<any>(null);
 
                   <div className="md:order-1 text-orange-200">
                     <h2 className="text-lg font-semibold ">
-                      One Square Roofing LLC
+                      OSR Pros. Services
                     </h2>
 
                     <p className="text-[12px]   mt-1">
-                      Insured Contractor
+                      Insured
                     </p>
 
                     <div className="text-[10px]   mt-2">
