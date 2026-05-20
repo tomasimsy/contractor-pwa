@@ -372,13 +372,26 @@ const addEditItem = (projectId: string) => {
   try {
     const invoiceNumber = estimate.estimate_number;
     
-    // Get items
-    const { data: items } = await supabase
+    // Get items - handle null case
+    const { data: items, error: itemsFetchError } = await supabase
       .from("estimate_items")
       .select("*")
       .eq("estimate_id", id);
     
-    // Create invoice WITH signature
+    if (itemsFetchError) {
+      console.error("Error fetching items:", itemsFetchError);
+      alert("Error fetching estimate items");
+      setConverting(false);
+      return;
+    }
+    
+    if (!items || items.length === 0) {
+      alert("No items found on this estimate");
+      setConverting(false);
+      return;
+    }
+    
+    // Create invoice
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .insert({
@@ -394,24 +407,21 @@ const addEditItem = (projectId: string) => {
         remaining_balance: viewTotal,
         amount_paid: 0,
         notes: estimate.notes,
-        signature: estimate.signature,  // ← COPY THE SIGNATURE HERE
+        signature: estimate.signature,
         issue_date: new Date().toISOString().split("T")[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       })
       .select()
       .single();
-
     
     if (invoiceError) {
       console.error("Invoice creation error:", invoiceError);
-      alert("Error creating invoice: " + invoiceError.message);
+      alert("Error creating invoice");
       setConverting(false);
       return;
     }
     
-    console.log("Invoice created:", invoice.id);
-    
-    // Prepare items to copy
+    // Prepare items to copy - items is guaranteed to exist here
     const itemsToCopy = items.map((item) => ({
       invoice_id: invoice.id,
       project_name: item.project_name || "Main Project",
@@ -424,21 +434,13 @@ const addEditItem = (projectId: string) => {
       total: item.total,
     }));
     
-    console.log("Attempting to insert:", itemsToCopy.length, "items");
-    console.log("First item to insert:", itemsToCopy[0]);
+    const { error: copyError } = await supabase
+      .from("invoice_items")
+      .insert(itemsToCopy);
     
-    // Try inserting one item at a time to find the problem
-    for (const item of itemsToCopy) {
-      const { error: singleError } = await supabase
-        .from("invoice_items")
-        .insert(item);
-      
-      if (singleError) {
-        console.error("Failed to insert item:", item, singleError);
-        alert(`Failed to insert item: ${item.name} - ${singleError.message}`);
-      } else {
-        console.log("Inserted item:", item.name);
-      }
+    if (copyError) {
+      console.error("Copy error:", copyError);
+      alert("Invoice created but failed to copy items. Please check invoice items.");
     }
     
     // Update estimate status
@@ -452,7 +454,7 @@ const addEditItem = (projectId: string) => {
     
   } catch (err) {
     console.error("Conversion error:", err);
-    alert("Error creating invoice: " + (err as Error).message);
+    alert("Error creating invoice");
   } finally {
     setConverting(false);
   }

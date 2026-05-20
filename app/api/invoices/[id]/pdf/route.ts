@@ -151,7 +151,7 @@ export async function GET(
           <tbody>
             ${project.items.map(item => `
               <tr>
-                <td>${item.name || "-"}</td>
+                <td style="text-align: left; text-transform: capitalize;">${item.name || "-"}</td>
                 <td>${item.description || "-"}</td>
                 <td style="text-align: center">${item.quantity || 0}</td>
                 <td style="text-align: right">${formatCurrency(item.unit_price || 0)}</td>
@@ -555,8 +555,8 @@ export async function GET(
               <tbody>
                 ${projects.map(project => `
                   <tr>
-                    <td>${project.name}</td>
-                    <td style="text-align: right">${formatCurrency(project.total)}</td>
+                    <td style="text-align: left;  text-transform: capitalize;">${project.name}</td>
+                    <td style="text-align: right; ">${formatCurrency(project.total)}</td>
                   </tr>
                 `).join("")}
                 <tr class="grand-total-row">
@@ -643,7 +643,7 @@ export async function GET(
               <tbody>
                 ${projects.map(project => `
                   <tr>
-                    <td>${project.name}</td>
+                    <td style="text-align: left; text-transform: capitalize;">${project.name}</td>
                     <td style="text-align: right">${formatCurrency(project.total)}</td>
                   </tr>
                 `).join("")}
