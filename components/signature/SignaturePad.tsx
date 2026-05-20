@@ -227,9 +227,21 @@ export default function SignaturePad({
     );
   }
 
-  /* ---------------- BUTTON ---------------- */
+  /* ---------------- BUTTON WITH TERMS ---------------- */
   return (
     <>
+      {/* Terms & Conditions */}
+      <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="text-xs font-semibold text-gray-700 mb-2">Terms & Conditions</div>
+        <div className="space-y-1 text-[11px] text-gray-600">
+          <p>1. This estimate is valid for 30 days from the date issued.</p>
+          <p>2. A 50% deposit is required to begin work. Remaining balance due upon completion.</p>
+          <p>3. Any changes or additions to scope must be approved in writing and may incur additional charges.</p>
+          <p>4. Client is responsible for providing safe access to work areas.</p>
+          <p>5. By signing below, you agree to all terms and conditions stated in this estimate.</p>
+        </div>
+      </div>
+
       <button
         onClick={() => setShowModal(true)}
         className="w-full py-2.5 rounded-xl text-sm text-white transition active:scale-95"

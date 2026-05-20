@@ -220,6 +220,16 @@ return (
                       {estimate.description}
                     </div>
                   )}
+
+                  {/* // In the estimate card, add an indicator */}
+{(estimate as any).opened_at && (
+  <div className="text-xs text-gray-500 mt-1">
+    <span>👁️</span> {new Date((estimate as any).opened_at).toLocaleString()}
+    {(estimate as any).opened_device && <span className="ml-1 text-gray-400">• {(estimate as any).opened_device}</span>}
+    {(estimate as any).opened_ip && <span className="ml-1 text-gray-400">• IP: {(estimate as any).opened_ip}</span>}
+    {(estimate as any).opened_count > 1 && <span className="ml-1 text-gray-400">• {(estimate as any).opened_count} views</span>}
+  </div>
+)}
                 </div>
 
                 {/* RIGHT */}

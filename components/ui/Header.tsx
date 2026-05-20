@@ -17,12 +17,12 @@ rightAction,
 // No unread count since we're not using a table
 
 return (
-<div className="bg-navy border-b border-gold/20 px-4 py-3 flex items-center sticky top-0 z-10 shadow-md">
+<div className="bg-primary border-b border-gold/20 px-4 py-3 flex items-center sticky top-0 z-10 shadow-md">
 
   {/* Left */}
   <div className="w-10 flex justify-start">
     {backLink && (
-    <Link href={backLink} className="text-gold text-xl hover:text-gold-light transition">
+    <Link href={backLink} className="text-white text-xl hover:text-gold-light transition">
     ←
     </Link>
     )}
@@ -38,7 +38,7 @@ return (
   {/* Right */}
   <div className="w-10 flex justify-end">
     {rightAction && (
-    <div className="text-gold">
+    <div className="text-white">
       {rightAction}
     </div>
     )}

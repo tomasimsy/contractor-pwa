@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { LineItem } from "@/types";
-import Header from "@/components/ui/Header";
 import ClientSelector from "@/components/forms/ClientSelector";
-import LineItemsEditor from "@/components/forms/LineItemsEditor";
 import {
   calculateSubtotal,
   calculateTax,
@@ -25,14 +23,17 @@ type Project = {
 
 export default function CreateEstimate() {
   const router = useRouter();
+  const newItemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const [clientId, setClientId] = useState("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   
-  // Target total modal state
   const [showTargetModal, setShowTargetModal] = useState(false);
   const [targetTotal, setTargetTotal] = useState<number | null>(null);
+
+  const BRAND_GREEN = "#0e542c";
+  const BRAND_GREEN_LIGHT = "#e8f5e9";
 
   const createEmptyItem = (): LineItem => ({
     id: crypto.randomUUID(),
@@ -54,8 +55,23 @@ export default function CreateEstimate() {
 
   const [projects, setProjects] = useState<Project[]>([createProject()]);
   const [saving, setSaving] = useState(false);
+  const [lastAddedItemId, setLastAddedItemId] = useState<string | null>(null);
 
-  // ALL ITEMS FLATTENED
+  useEffect(() => {
+    if (lastAddedItemId && newItemRefs.current[lastAddedItemId]) {
+      newItemRefs.current[lastAddedItemId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      const element = newItemRefs.current[lastAddedItemId];
+      element?.classList.add("bg-green-50", "transition-all", "duration-500");
+      setTimeout(() => {
+        element?.classList.remove("bg-green-50");
+      }, 1000);
+      setLastAddedItemId(null);
+    }
+  }, [lastAddedItemId]);
+
   const allItems = projects.flatMap((project) =>
     project.items.map((item) => ({
       ...item,
@@ -67,7 +83,6 @@ export default function CreateEstimate() {
   const tax = calculateTax(subtotal, 0);
   const total = calculateTotal(subtotal, 0, 0, tax);
 
-  // Distribute target total across all items
   const distributeToTargetTotal = () => {
     if (!targetTotal || targetTotal <= 0) {
       alert("Please enter a valid target total");
@@ -106,7 +121,7 @@ export default function CreateEstimate() {
     setProjects(updatedProjects);
     setTargetTotal(null);
     setShowTargetModal(false);
-    alert(`Total updated to ${formatCurrency(targetTotal)}. Difference of ${formatCurrency(difference)} distributed across ${allLineItems.length} items.`);
+    alert(`Total updated to ${formatCurrency(targetTotal)}`);
   };
 
   const addProject = () => {
@@ -126,11 +141,49 @@ export default function CreateEstimate() {
     );
   };
 
-  const updateProjectItems = (projectId: string, updatedItems: LineItem[]) => {
+  const addItemToProject = (projectId: string) => {
+    const newItem = createEmptyItem();
     setProjects((prev) =>
       prev.map((project) =>
-        project.id === projectId ? { ...project, items: updatedItems } : project
+        project.id === projectId
+          ? { ...project, items: [...project.items, newItem] }
+          : project
       )
+    );
+    setLastAddedItemId(newItem.id);
+  };
+
+  const updateItemInProject = (
+    projectId: string,
+    itemId: string,
+    field: keyof LineItem,
+    value: any
+  ) => {
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+        return {
+          ...project,
+          items: project.items.map((item) => {
+            if (item.id !== itemId) return item;
+            const updated = { ...item, [field]: value };
+            if (field === "quantity" || field === "unit_price") {
+              updated.total = updated.quantity * updated.unit_price;
+            }
+            return updated;
+          }),
+        };
+      })
+    );
+  };
+
+  const removeItemFromProject = (projectId: string, itemId: string) => {
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+        const newItems = project.items.filter((item) => item.id !== itemId);
+        return { ...project, items: newItems.length ? newItems : [createEmptyItem()] };
+      })
     );
   };
 
@@ -191,7 +244,7 @@ export default function CreateEstimate() {
       console.error(itemsError);
       alert(itemsError.message);
     } else {
-      alert(`Estimate #${estimateNumber} created successfully!`);
+      alert(`Estimate #${estimateNumber} created!`);
       router.push(`/estimates/${estimate.id}`);
     }
 
@@ -203,194 +256,253 @@ export default function CreateEstimate() {
       {/* Target Total Modal */}
       {showTargetModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-navy mb-2">Set Target Total</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Current total: {formatCurrency(total)}
+          <div className="bg-white rounded-xl max-w-md w-full p-5">
+            <h3 className="text-base font-semibold text-gray-800 mb-2">- Set Target Total</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Current: {formatCurrency(total)}
             </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Desired Total
-              </label>
-              <input
-                type="number"
-                value={targetTotal || ""}
-                onChange={(e) => setTargetTotal(Number(e.target.value))}
-                className="w-full border border-gray-200 rounded-lg p-3 text-lg focus:outline-none focus:ring-2 focus:ring-gold"
-                placeholder="Enter total amount"
-                step="0.01"
-                autoFocus
-              />
+            <input
+              type="number"
+              value={targetTotal || ""}
+              onChange={(e) => setTargetTotal(Number(e.target.value))}
+              className="w-full border border-gray-200 rounded-lg p-2 text-base mb-3 focus:outline-none focus:ring-2 focus:ring-green-600"
+              placeholder="Enter desired total"
+              step="0.01"
+              autoFocus
+            />
+            <div className="text-[11px] text-gray-400 mb-4">
+              Difference will be split across {projects.flatMap(p => p.items).length} items
             </div>
-            <div className="text-xs text-gray-400 mb-4">
-              The difference will be distributed evenly across all {projects.flatMap(p => p.items).length} items.
-            </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowTargetModal(false)}
-                className="flex-1 py-2 border border-gray-200 rounded-lg text-gray-600 text-sm hover:bg-gray-50"
+                className="flex-1 py-2 border border-gray-200 rounded-lg text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={distributeToTargetTotal}
-                className="flex-1 py-2 bg-gold text-navy rounded-lg text-sm font-medium hover:bg-gold-dark"
+                className="flex-1 py-2 bg-green-700 text-white rounded-lg text-sm font-medium"
               >
-                Apply Target Total
+                Apply
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="min-h-screen bg-[#f6f7f9] pb-10">
-        {/* HEADER */}
-        <div className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur">
-          <Header
-            title="New Estimate"
-            backLink="/estimates"
-            rightAction={
-              <button
-                onClick={saveEstimate}
-                disabled={saving}
-                className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save"}
-              </button>
-            }
-          />
+      <div className="min-h-screen bg-gray-100 pb-20">
+        {/* Header */}
+        <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button onClick={() => router.back()} className="text-gray-600 text-xl">
+              ←
+            </button>
+            <h1 className="text-base font-semibold text-gray-800">New Estimate</h1>
+            <button
+              onClick={saveEstimate}
+              disabled={saving}
+              className="bg-green-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+          </div>
         </div>
 
-        {/* CONTENT */}
-        <div className="mx-auto max-w-3xl space-y-4 p-4">
-          {/* CLIENT */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="p-3 space-y-3">
+          {/* Client */}
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
             <ClientSelector selectedId={clientId} onSelect={setClientId} />
           </div>
 
-          {/* DESCRIPTION */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">
-              Description
-            </div>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full resize-none rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-gray-300 focus:outline-none"
-              rows={2}
-              placeholder="Brief description of work..."
-            />
-          </div>
+          {/* Description */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 transition-all duration-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20">
+  <textarea
+    value={description}
+    onChange={(e) => setDescription(e.target.value)}
+    className="w-full text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none capitalize"
+    rows={2}
+    placeholder="Brief description of work..."
+  />
+</div>
 
-          {/* PROJECTS */}
-          <div className="space-y-4">
-            {projects.map((project, index) => {
-              const projectSubtotal = calculateSubtotal(project.items);
-              return (
-                <div
-                  key={project.id}
-                  className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
-                >
-                  {/* PROJECT HEADER */}
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      Project {index + 1}
+          {/* Projects */}
+          <div className="space-y-3">
+            {projects.map((project, projectIdx) => (
+              <div key={project.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                {/* Project Header - Green Accent */}
+                <div className="bg-green-700 px-3 py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-xs font-semibold text-green-100 bg-green-800/50 px-2 py-0.5 rounded">
+                        Project {projectIdx + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={project.name}
+                        onChange={(e) => updateProject(project.id, "name", e.target.value)}
+                        placeholder="Project name"
+                        className="flex-1 bg-white/20 text-white placeholder:text-green-200 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/50"
+                      />
                     </div>
                     {projects.length > 1 && (
                       <button
                         onClick={() => removeProject(project.id)}
-                        className="text-xs text-red-500 hover:text-red-600"
+                        className="text-green-200 hover:text-white text-lg px-2"
                       >
-                        Remove
+                        ✕
                       </button>
                     )}
                   </div>
-
-                  {/* PROJECT NAME */}
-                  <input
-                    type="text"
-                    value={project.name}
-                    onChange={(e) => updateProject(project.id, "name", e.target.value)}
-                    placeholder="Project name..."
-                    className="mb-3 w-full rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-gray-300 focus:outline-none"
-                  />
-
-                  {/* PROJECT DESCRIPTION */}
-                  <textarea
-                    value={project.description}
-                    onChange={(e) => updateProject(project.id, "description", e.target.value)}
-                    rows={2}
-                    placeholder="Project description..."
-                    className="mb-4 w-full resize-none rounded-lg border border-gray-200 p-2 text-sm text-gray-700 focus:border-gray-300 focus:outline-none"
-                  />
-
-                  {/* PROJECT ITEMS */}
-                  <LineItemsEditor
-                    items={project.items}
-                    onChange={(updatedItems) => updateProjectItems(project.id, updatedItems)}
-                  />
-
-                  {/* PROJECT TOTAL */}
-                  <div className="mt-4 border-t pt-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Project Total</span>
-                      <span className="font-semibold text-gray-900">
-                        {formatCurrency(projectSubtotal)}
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              );
-            })}
 
-            {/* ADD PROJECT */}
-            <button
-              onClick={addProject}
-              className="w-full rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-sm font-medium text-gray-500 transition hover:border-gray-400 hover:text-gray-700"
-            >
-              + Add Project
-            </button>
+                {/* Project Description */}
+                <div className="px-3 pt-2">
+  <textarea
+    value={project.description}
+    onChange={(e) => updateProject(project.id, "description", e.target.value)}
+    rows={1}
+    placeholder="Project description (optional)"
+    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-700 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 resize-none transition-all capitalize"
+  />
+</div>
+
+                {/* Items */}
+                <div className="px-3   space-y-2">
+                  {project.items.map((item, itemIdx) => (
+                    <div
+                      key={item.id}
+                      ref={(el) => { newItemRefs.current[item.id] = el; }}
+                      className="bg-gray-50 rounded-lg p-2 border border-gray-200"
+                    >
+                      <div className="flex gap-2 mb-2 ">
+<div className="flex-1 flex items-center gap-1">
+  <span className="text-[10px] text-gray-400 w-5">{itemIdx + 1}.</span>
+  <div className="flex-1">
+    <input
+      type="text"
+      value={item.name}
+      onChange={(e) => updateItemInProject(project.id, item.id, "name", e.target.value)}
+      placeholder="Item name"
+      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-[10px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 placeholder:text-gray-400 transition-all capitalize"
+    />
+  </div>
+</div>
+                        <button
+                          onClick={() => removeItemFromProject(project.id, item.id)}
+                          className="text-red-400 text-xs px-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {item.description && (
+                        <textarea
+                          value={item.description}
+                          onChange={(e) => updateItemInProject(project.id, item.id, "description", e.target.value)}
+                          rows={1}
+                          placeholder="Description"
+                          className="w-full text-xs text-gray-500 bg-transparent focus:outline-none mb-2 resize-none"
+                        />
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-gray-200 transition-all duration-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20">
+  <span className="text-[10px] text-gray-400">Qty</span>
+  <input
+    type="number"
+    value={item.quantity === 0 ? "" : item.quantity}
+    onChange={(e) => {
+      const val = e.target.value === "" ? 0 : Number(e.target.value);
+      updateItemInProject(project.id, item.id, "quantity", val);
+    }}
+    className="w-12 text-sm text-gray-700 text-center focus:outline-none bg-transparent"
+    placeholder="0"
+  />
+</div>
+                        <div className="flex items-center  gap-1 bg-white px-2 py-1 rounded border border-gray-200 transition-all duration-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20">
+  <span className="text-[10px] text-gray-400">$</span>
+  <input
+    type="number"
+    value={item.unit_price === 0 ? "" : item.unit_price}
+    onChange={(e) => {
+      const val = e.target.value === "" ? 0 : Number(e.target.value);
+      updateItemInProject(project.id, item.id, "unit_price", val);
+    }}
+    className="w-20 text-sm text-gray-700 text-right focus:outline-none bg-transparent"
+    placeholder="0.00"
+    step="0.01"
+  />
+</div>
+                        <div className="flex-1  text-right text-sm font-medium text-gray-700">
+                          {formatCurrency(item.quantity * item.unit_price)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}       
+                </div>
+
+                {/* Add Item Button - Green */}
+                <div className="flex justify-center my-1">
+                  <button
+                    onClick={() => addItemToProject(project.id)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-green-300 text-green-600 text-xs font-medium hover:bg-green-50 transition-all duration-200"
+                  >
+                    <span className="text-base">+</span>
+                    Add Item
+                  </button>
+                </div>
+
+                {/* Project Total - Green Accent */}
+                <div className="bg-green-50 px-3 py-2 border-t border-green-100 flex justify-between items-center">
+                  <span className="text-xs text-green-700 font-medium">Project Total</span>
+                  <span className="text-sm font-bold text-green-800">
+                    {formatCurrency(calculateSubtotal(project.items))}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* SUMMARY */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                Summary
-              </div>
+          {/* Add Project Button - Green */}
+          <button
+            onClick={addProject}
+            className="w-full py-3 rounded-xl border-1 border border-green-300 bg-green-50 text-green-700 text-sm font-medium hover:bg-green-100 transition-all duration-200"
+          >
+            + Add Project
+          </button>
+
+          {/* Summary - Green Accent */}
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-medium text-gray-500">Summary</span>
               <button
                 onClick={() => setShowTargetModal(true)}
-                className="text-xs text-gold hover:text-gold-dark transition"
+                className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded hover:bg-green-200 transition"
               >
-                🎯 Set Target Total
+                - Set Target Total
               </button>
             </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span className="font-medium text-gray-900">{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="border-t pt-2 flex justify-between text-gray-800">
-                <span className="font-medium">Total</span>
-                <span className="font-semibold">{formatCurrency(total)}</span>
-              </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Subtotal</span>
+              <span className="font-medium text-gray-700">{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-base font-semibold mt-2 pt-2 border-t border-gray-100">
+              <span>Total</span>
+              <span className="text-green-700">{formatCurrency(total)}</span>
             </div>
           </div>
 
-          {/* NOTES */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">
-              Notes
-            </div>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full resize-none rounded-lg border border-gray-200 p-2 text-xs text-gray-700 focus:border-gray-300 focus:outline-none"
-              rows={2}
-              placeholder="Additional notes for the client..."
-            />
-          </div>
+          {/* Notes */}
+<div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 transition-all duration-200 focus-within:border-green-500 focus-within:shadow-md">
+  <textarea
+    value={notes}
+    onChange={(e) => setNotes(e.target.value)}
+    className="w-full text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none"
+    rows={2}
+    placeholder="Notes for client (optional)..."
+  />
+</div>
         </div>
       </div>
     </ProtectedRoute>

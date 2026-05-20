@@ -4,63 +4,137 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import SignaturePadInvoice from "@/components/signature/SignaturePadInvoice";
-import styles from "@/app/estimates/page.module.css";
-
-const formatCurrency = (amount: number) => {
-return new Intl.NumberFormat('en-US', {
-style: 'currency',
-currency: 'USD',
-minimumFractionDigits: 2,
-}).format(amount);
-};
+import { formatCurrency } from "@/lib/utils/formatting";
+import Link from "next/link";
 
 type Signature = { type: "draw" | "type"; value: string; date: string };
 
 export default function PublicEstimatePage() {
-const { id } = useParams();
-const [estimate, setEstimate] = useState<any>(null);
+  const { id } = useParams();
+  const [estimate, setEstimate] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
-    const [items, setItems] = useState<any[]>([]);
-      const [loading, setLoading] = useState(true);
-      const [signed, setSigned] = useState(false);
-      const [signature, setSignature] = useState<Signature | null>(null);
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [signed, setSigned] = useState(false);
+  const [signature, setSignature] = useState<Signature | null>(null);
+  const [tracked, setTracked] = useState(false);
 
-        useEffect(() => {
-        loadEstimate();
-        }, [id]);
+  useEffect(() => {
+    loadEstimate();
+  }, [id]);
 
-        async function loadEstimate() {
-        try {
-        const { data: est } = await supabase
+  async function loadEstimate() {
+    try {
+      const { data: est } = await supabase
         .from("estimates")
         .select("*")
         .eq("id", id)
         .single();
-
-        if (est) {
+      
+      if (est) {
         setEstimate(est);
         setSigned(!!est.signature);
         if (est.signature) setSignature(est.signature);
-
+        
         const { data: clientData } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("id", est.client_id)
-        .single();
+          .from("clients")
+          .select("*")
+          .eq("id", est.client_id)
+          .single();
         setClient(clientData);
-
+        
         const { data: itemsData } = await supabase
-        .from("estimate_items")
-        .select("*")
-        .eq("estimate_id", id);
+          .from("estimate_items")
+          .select("*")
+          .eq("estimate_id", id);
         setItems(itemsData || []);
+        
+        // Track location if not already tracked for this IP/location
+        if (!tracked) {
+          await trackLocation(est);
         }
-        } catch (err) {
-        console.error(err);
-        } finally {
-        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function trackLocation(est: any) {
+    try {
+      // Get device info
+      const deviceType = /Mobile|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) 
+        ? "mobile" 
+        : "desktop";
+      
+      // Get IP and location
+      let locationData = null;
+      let ip = null;
+      
+      try {
+        // Get IP and location from ipapi.co (free)
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        const ipInfo = await ipResponse.json();
+        ip = ipInfo.ip;
+        
+        locationData = {
+          ip: ipInfo.ip,
+          city: ipInfo.city,
+          region: ipInfo.region,
+          country: ipInfo.country_name,
+          country_code: ipInfo.country_code,
+          latitude: ipInfo.latitude,
+          longitude: ipInfo.longitude,
+          device: deviceType,
+          viewed_at: new Date().toISOString()
+        };
+      } catch (e) {
+        console.log("Could not fetch location");
+      }
+      
+      if (locationData) {
+        // Get existing locations
+        const currentLocations = est.view_locations || [];
+        
+        // Check if this location already exists (same city or same IP)
+        const existingLocation = currentLocations.find(
+          (loc: any) => loc.city === locationData.city || loc.ip === locationData.ip
+        );
+        
+        if (!existingLocation) {
+          // New unique location - add to array
+          const updatedLocations = [...currentLocations, locationData];
+          
+          await supabase
+            .from("estimates")
+            .update({
+              view_locations: updatedLocations,
+              unique_locations: updatedLocations.length,
+              opened_at: new Date().toISOString(),
+              opened_count: (est.opened_count || 0) + 1,
+              opened_device: deviceType,
+              opened_ip: ip,
+            })
+            .eq("id", id);
+          
+          console.log("New location tracked:", locationData.city);
+        } else {
+          // Same location, just update view count
+          await supabase
+            .from("estimates")
+            .update({
+              opened_count: (est.opened_count || 0) + 1,
+            })
+            .eq("id", id);
         }
-        }
+      }
+      
+      setTracked(true);
+    } catch (err) {
+      console.error("Tracking error:", err);
+    }
+  }
 
         const saveSignature = async (newSignature: Signature) => {
         const { error } = await supabase
@@ -129,7 +203,7 @@ const [estimate, setEstimate] = useState<any>(null);
                     </h2>
 
                     <p className="text-[12px]   mt-1 capitalize">
-                      {client?.address || "Please update your address"}
+                      {client?.address }
                     </p>
 
                     {/* <p className="text-[12px] text-green-800 mt-1">
@@ -182,7 +256,7 @@ const [estimate, setEstimate] = useState<any>(null);
                   Description
                 </h3>
 
-                <div className="text-[12px] rounded-xl capitalize leading-relaxed">
+                <div className="text-[11px] rounded-xl capitalize leading-relaxed">
                   <p className="  whitespace-pre-line">
                     {estimate.description}</p>
                   <p>***{estimate.notes}</p>
@@ -196,52 +270,54 @@ const [estimate, setEstimate] = useState<any>(null);
 
             {/* Items Table */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-200">
-              <div className="bg-navy px-5 py-3 bg-green-900">
-                <h3 className="text-sm font-semibold text-white">Estimate Details</h3>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-100 border-b border-gray-200">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-600">Item</th>
-                    <th className={`text-left text-sm px-5 py-3 font-semibold text-gray-600 capitalize`}> Description
-                    </th>
-                    <th className="text-right px-5 py-3 text-xs font-semibold text-gray-600">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-
-                    {/* ITEM NAME + META */}
-                    <td className="px-5 py-3 align-top ">
-                      <div className="text-[11px] font-medium text-slate-800   capitalize ">
-                        {item.name}
-                      </div>
-
-                      <div className="text-[8px] text-slate-400 mt-0.5 capitalize">
-                        {item.quantity} × {formatCurrency(item.unit_price)}
-                      </div>
-                    </td>
-
-                    {/* DESCRIPTION */}
-                    <td className="px-5 py-3 align-top">
-                      <div className="text-[11px] text-slate-500 leading-relaxed capitalize">
-                        {item.description || "—"}
-                      </div>
-                    </td>
-
-                    {/* TOTAL */}
-                    <td className="px-5 py-3 text-right align-top">
-                      <div className="text-sm font-semibold text-emerald-700">
-                        {formatCurrency(item.total)}
-                      </div>
-                    </td>
-
-                  </tr>
-                  ))}
-                </tbody>
-              </table>
+  <div className="bg-green-700 px-5 py-3">
+    <h3 className="text-sm font-semibold text-white">Estimate Details</h3>
+  </div>
+  <table className="w-full">
+    <thead>
+      <tr className="bg-gray-100 border-b border-gray-200">
+        <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-600 w-[40%]">Item</th>
+        <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-600 w-[40%]">Description</th>
+        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-gray-600 w-[20%]">Total</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-100">
+      {items.map((item) => (
+        <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
+          {/* ITEM NAME */}
+          <td className="px-4 py-3 align-top">
+            <div className="text-[10px] font-medium text-gray-800 capitalize">
+              {item.name}
             </div>
+            <div className="text-[9px] text-gray-400 mt-0.5 capitalize">
+              {item.quantity} × {formatCurrency(item.unit_price)}
+            </div>
+          </td>
+
+          {/* DESCRIPTION */}
+          <td className="px-4 py-3 align-top">
+            {item.description ? (
+              <div className="text-[10px] text-gray-600 leading-relaxed">
+                {item.description}
+              </div>
+            ) : (
+              <span className="text-[10px] text-gray-400 italic">
+                {item.project_name || "No description"}
+              </span>
+            )}
+          </td>
+
+          {/* TOTAL */}
+          <td className="px-4 py-3 text-right align-top">
+            <div className="text-[11px] font-semibold text-green-700">
+              {formatCurrency(item.total)}
+            </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
             {/* Total - Dark Blue with Green Total */}
             <div className="bg-navy rounded-xl p-4 shadow-md">
@@ -314,6 +390,11 @@ const [estimate, setEstimate] = useState<any>(null);
                   <SignaturePadInvoice onSave={saveSignature} existingSignature={null}
                     buttonText="Sign & Approve Estimate" />
                 </div>
+ {/* <Link href={`/public/estimates/${id}/itemized`}>
+  <button className="w-full py-2.5 rounded-xl border border-green-200 bg-green-50 text-green-700 text-sm font-medium hover:bg-green-100 transition flex items-center justify-center gap-2">
+    <span>📋</span> View Detailed Breakdown
+  </button>
+</Link> */}
               </>
               )}
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Client } from "@/types";
 
@@ -22,9 +22,29 @@ export default function ClientSelector({
   const [newPhone, setNewPhone] = useState("");
   const [newEmail, setNewEmail] = useState("");
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     loadClients();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSearch(false);
+      }
+    };
+
+    if (showSearch) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSearch]);
 
   async function loadClients() {
     const { data } = await supabase.from("clients").select("*").limit(20);
@@ -59,27 +79,20 @@ export default function ClientSelector({
   /* ===================== SELECTED STATE ===================== */
   if (selectedId && selectedClient) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3">
-        <div className="text-[11px] text-gray-500 mb-2">
-          Client
-        </div>
-
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 transition-all duration-200">
+        <div className="text-[11px] text-gray-500 mb-2">Client</div>
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold text-gray-900">
               {selectedClient.name}
             </div>
-
             {selectedClient.phone && (
-              <div className="text-[11px] text-gray-500">
-                {selectedClient.phone}
-              </div>
+              <div className="text-[11px] text-gray-500">{selectedClient.phone}</div>
             )}
           </div>
-
           <button
             onClick={() => onSelect("")}
-            className="text-[11px] px-2 py-1 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition"
+            className="text-[11px] px-2 py-1 rounded-md bg-green-700 text-white hover:bg-green-800 transition"
           >
             Change
           </button>
@@ -90,42 +103,40 @@ export default function ClientSelector({
 
   /* ===================== DEFAULT SELECT ===================== */
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 relative">
-
-      <div className="text-[11px] text-gray-500 mb-2">
-        Client
-      </div>
+    <div className="text-sm relative transition-all duration-200">
+      <div className="  text-gray-500 mb-2">Client</div>
 
       {/* SEARCH INPUT */}
       <input
+        ref={searchInputRef}
         type="text"
         placeholder="Search client..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         onFocus={() => setShowSearch(true)}
-        className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all"
       />
 
       {/* DROPDOWN */}
       {showSearch && (
-        <div className="absolute left-3 right-3 top-[72px] bg-white border border-gray-100 rounded-xl shadow-lg max-h-60 overflow-y-auto z-20">
-
+        <div
+          ref={dropdownRef}
+          className="absolute left-3 right-3 top-[72px] bg-white border border-gray-100 rounded-xl shadow-lg max-h-60 overflow-y-auto z-20"
+        >
           {/* CREATE NEW */}
           <button
             onClick={() => {
               setShowSearch(false);
               setShowNewForm(true);
             }}
-            className="w-full text-left px-3 py-2 text-sm text-gray-900 border-b hover:bg-gray-50"
+            className="w-full text-left px-3 py-2 text-sm text-gray-900 border-b hover:bg-green-50 transition"
           >
-            <span className="text-gray-500">＋</span> Create new client
+            <span className="text-green-600 font-medium">＋</span> Create new client
           </button>
 
           {/* LIST */}
           {clients
-            .filter((c) =>
-              c.name.toLowerCase().includes(searchTerm.toLowerCase())
-            )
+            .filter((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
             .map((c) => (
               <button
                 key={c.id}
@@ -134,17 +145,10 @@ export default function ClientSelector({
                   setShowSearch(false);
                   setSearchTerm("");
                 }}
-                className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b last:border-b-0"
+                className="w-full text-left px-3 py-2 hover:bg-green-50 border-b last:border-b-0 transition"
               >
-                <div className="text-sm font-medium text-gray-900">
-                  {c.name}
-                </div>
-
-                {c.phone && (
-                  <div className="text-[11px] text-gray-500">
-                    {c.phone}
-                  </div>
-                )}
+                <div className="text-sm font-medium text-gray-900">{c.name}</div>
+                {c.phone && <div className="text-[11px] text-gray-500">{c.phone}</div>}
               </button>
             ))}
         </div>
@@ -153,18 +157,15 @@ export default function ClientSelector({
       {/* NEW CLIENT MODAL */}
       {showNewForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-sm p-4 shadow-xl">
-
-            <div className="text-sm font-semibold mb-3">
-              New Client
-            </div>
+          <div className="bg-white rounded-xl w-full max-w-sm p-5 shadow-xl">
+            <div className="text-base font-semibold mb-4 text-gray-800">New Client</div>
 
             <input
               type="text"
               placeholder="Name *"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-2 text-sm mb-2"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all"
             />
 
             <input
@@ -172,7 +173,7 @@ export default function ClientSelector({
               placeholder="Phone"
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-2 text-sm mb-2"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all"
             />
 
             <input
@@ -180,20 +181,19 @@ export default function ClientSelector({
               placeholder="Email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-2 text-sm mb-3"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all"
             />
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowNewForm(false)}
-                className="flex-1 text-sm py-2 rounded-md border border-gray-200 bg-white"
+                className="flex-1 text-sm py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition"
               >
                 Cancel
               </button>
-
               <button
                 onClick={createClient}
-                className="flex-1 text-sm py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800"
+                className="flex-1 text-sm py-2 rounded-lg bg-green-700 text-white hover:bg-green-800 transition"
               >
                 Create
               </button>
