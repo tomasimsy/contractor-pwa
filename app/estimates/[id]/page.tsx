@@ -361,55 +361,102 @@ const addEditItem = (projectId: string) => {
   };
 
   const convertToInvoice = async () => {
-    if (!estimate) return;
-    setConverting(true);
-    try {
-      const invoiceNumber = estimate.estimate_number;
-      const { data: invoice, error } = await supabase
-        .from("invoices")
-        .insert({
-          estimate_id: id,
-          client_id: estimate.client_id,
-          invoice_number: invoiceNumber,
-          description: estimate.description,
-          subtotal: viewSubtotal,
-          markup: estimate.markup || 0,
-          discount: estimate.discount || 0,
-          tax: viewTax,
-          total: viewTotal,
-          remaining_balance: viewTotal,
-          amount_paid: 0,
-          notes: estimate.notes,
-          signature: estimate.signature,
-          issue_date: new Date().toISOString().split("T")[0],
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      const itemsToCopy = projects.flatMap((p) =>
-        p.items.map((item) => ({
-          invoice_id: invoice.id,
-          project_name: p.name,
-          category: item.category,
-          name: item.name,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          taxable: item.taxable,
-          total: item.total,
-        }))
-      );
-      await supabase.from("invoice_items").insert(itemsToCopy);
-      await supabase.from("estimates").update({ status: "converted" }).eq("id", id);
-      router.push(`/invoices/${invoice.id}`);
-    } catch (err) {
-      console.error(err);
-      alert("Error creating invoice");
-    } finally {
+  if (!estimate) return;
+  
+  if (!confirm("Convert this estimate to an invoice? This will lock the estimate.")) {
+    return;
+  }
+  
+  setConverting(true);
+  
+  try {
+    const invoiceNumber = estimate.estimate_number;
+    
+    // Get items
+    const { data: items } = await supabase
+      .from("estimate_items")
+      .select("*")
+      .eq("estimate_id", id);
+    
+    // Create invoice WITH signature
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("invoices")
+      .insert({
+        estimate_id: id,
+        client_id: estimate.client_id,
+        invoice_number: invoiceNumber,
+        description: estimate.description,
+        subtotal: viewSubtotal,
+        markup: estimate.markup || 0,
+        discount: estimate.discount || 0,
+        tax: viewTax,
+        total: viewTotal,
+        remaining_balance: viewTotal,
+        amount_paid: 0,
+        notes: estimate.notes,
+        signature: estimate.signature,  // ← COPY THE SIGNATURE HERE
+        issue_date: new Date().toISOString().split("T")[0],
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      })
+      .select()
+      .single();
+
+    
+    if (invoiceError) {
+      console.error("Invoice creation error:", invoiceError);
+      alert("Error creating invoice: " + invoiceError.message);
       setConverting(false);
+      return;
     }
-  };
+    
+    console.log("Invoice created:", invoice.id);
+    
+    // Prepare items to copy
+    const itemsToCopy = items.map((item) => ({
+      invoice_id: invoice.id,
+      project_name: item.project_name || "Main Project",
+      category: item.category,
+      name: item.name,
+      description: item.description || "",
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      taxable: item.taxable,
+      total: item.total,
+    }));
+    
+    console.log("Attempting to insert:", itemsToCopy.length, "items");
+    console.log("First item to insert:", itemsToCopy[0]);
+    
+    // Try inserting one item at a time to find the problem
+    for (const item of itemsToCopy) {
+      const { error: singleError } = await supabase
+        .from("invoice_items")
+        .insert(item);
+      
+      if (singleError) {
+        console.error("Failed to insert item:", item, singleError);
+        alert(`Failed to insert item: ${item.name} - ${singleError.message}`);
+      } else {
+        console.log("Inserted item:", item.name);
+      }
+    }
+    
+    // Update estimate status
+    await supabase
+      .from("estimates")
+      .update({ status: "converted", invoice_id: invoice.id })
+      .eq("id", id);
+    
+    alert("Invoice created successfully!");
+    router.push(`/invoices/${invoice.id}`);
+    
+  } catch (err) {
+    console.error("Conversion error:", err);
+    alert("Error creating invoice: " + (err as Error).message);
+  } finally {
+    setConverting(false);
+  }
+};
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

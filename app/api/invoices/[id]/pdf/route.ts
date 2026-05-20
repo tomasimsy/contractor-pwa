@@ -40,6 +40,20 @@ export async function GET(
       .eq("invoice_id", id)
       .order("created_at", { ascending: false });
 
+    // Get signature from estimate (where it's actually stored)
+    let signature = null;
+    if (invoice?.estimate_id) {
+      const { data: estimate } = await supabase
+        .from("estimates")
+        .select("signature")
+        .eq("id", invoice.estimate_id)
+        .single();
+      
+      if (estimate?.signature) {
+        signature = estimate.signature;
+      }
+    }
+
     const totalPaid = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     const remainingBalance = (invoice?.total || 0) - totalPaid;
 
@@ -73,11 +87,47 @@ export async function GET(
 
     const formatDate = (date: string) => {
       if (!date) return "Not set";
-      return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
+      try {
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      } catch {
+        return "Not set";
+      }
+    };
+
+    // Format signature display HTML
+    const getSignatureHtml = () => {
+      if (!signature) {
+        return `
+          <div class="signature-not-signed">
+            <div class="not-signed-icon">✍️</div>
+            <div>Not signed yet</div>
+          </div>
+        `;
+      }
+      
+      if (signature.type === "type") {
+        return `
+          <div class="signature-typed">
+            <div class="signature-name">${signature.value}</div>
+            <div class="signature-date">Signed on ${formatDate(signature.date)}</div>
+          </div>
+        `;
+      }
+      
+      if (signature.type === "draw") {
+        return `
+          <div class="signature-draw">
+            <img src="${signature.value}" class="signature-image" alt="Customer signature" />
+            <div class="signature-date">Signed on ${formatDate(signature.date)}</div>
+          </div>
+        `;
+      }
+      
+      return '';
     };
 
     // Generate project pages HTML
@@ -114,17 +164,6 @@ export async function GET(
         <div class="project-total-box">
           <div class="project-total-label">Project Total</div>
           <div class="project-total-amount">${formatCurrency(project.total)}</div>
-        </div>
-
-        <div class="signature-section">
-          <div class="signature-block">
-            <div class="signature-line"></div>
-            <div class="signature-label">Client Approval (Initials)</div>
-          </div>
-          <div class="signature-block">
-            <div class="signature-line"></div>
-            <div class="signature-label">Contractor Approval (Initials)</div>
-          </div>
         </div>
 
         <div class="footer">
@@ -186,7 +225,6 @@ export async function GET(
           .page:last-child {
             page-break-after: auto;
           }
-          /* Header */
           .header {
             display: flex;
             justify-content: space-between;
@@ -217,7 +255,6 @@ export async function GET(
             text-align: right;
             margin-top: 4px;
           }
-          /* Section Titles */
           .section-title {
             font-size: 12px;
             font-weight: 600;
@@ -229,7 +266,6 @@ export async function GET(
             border-left: none;
             padding-left: 0;
           }
-          /* Client Card */
           .client-card {
             background: #f8fafc;
             padding: 20px 24px;
@@ -247,7 +283,6 @@ export async function GET(
             font-weight: 500;
             color: #5a6e7e;
           }
-          /* Tables */
           table {
             width: 100%;
             border-collapse: collapse;
@@ -269,7 +304,6 @@ export async function GET(
             font-size: 10px;
             color: #2a3a4a;
           }
-          /* Summary Box */
           .summary-box {
             background: #f8fafc;
             padding: 20px 24px;
@@ -293,7 +327,38 @@ export async function GET(
             border-radius: 12px;
             border: 1px solid #f0e6d0;
           }
-          /* Project Page Styles */
+          .terms-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #eef2f4;
+          }
+          .terms-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a2a3a;
+            margin-bottom: 12px;
+          }
+          .terms-list {
+            list-style: none;
+            padding: 0;
+          }
+          .terms-list li {
+            font-size: 9px;
+            color: #5a6e7e;
+            margin-bottom: 6px;
+            padding-left: 14px;
+            position: relative;
+            line-height: 1.4;
+          }
+          .terms-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #d4a048;
+            font-weight: bold;
+          }
           .project-header {
             display: flex;
             justify-content: space-between;
@@ -337,27 +402,59 @@ export async function GET(
             font-weight: 700;
             color: #d4a048;
           }
-          /* Signature Section */
-          .signature-section {
-            display: flex;
-            justify-content: space-between;
-            margin: 40px 0 20px;
-            gap: 40px;
-          }
-          .signature-block {
-            flex: 1;
-          }
-          .signature-line {
-            border-bottom: 1px solid #1a2a3a;
-            margin-top: 40px;
-            margin-bottom: 6px;
-          }
-          .signature-label {
-            font-size: 9px;
-            color: #8a9aaa;
+          /* Signature Styles - Same as component */
+          .customer-signature {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #eef2f4;
             text-align: center;
           }
-          /* Summary Table */
+          .customer-signature-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a2a3a;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+          }
+          .signature-typed {
+            text-align: center;
+          }
+          .signature-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a2a3a;
+            font-family: 'Brush Script MT', cursive;
+            border-bottom: 1px solid #d4a048;
+            display: inline-block;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+          }
+          .signature-draw {
+            text-align: center;
+          }
+          .signature-image {
+            max-height: 80px;
+            max-width: 100%;
+            margin: 0 auto;
+            display: block;
+            object-fit: contain;
+          }
+          .signature-date {
+            font-size: 10px;
+            color: #8a9aaa;
+            margin-top: 8px;
+          }
+          .signature-not-signed {
+            text-align: center;
+            color: #8a9aaa;
+            font-style: italic;
+          }
+          .not-signed-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+          }
           .summary-table {
             width: 100%;
             border-collapse: collapse;
@@ -410,7 +507,7 @@ export async function GET(
           <div class="page">
             <div class="header">
               <div>
-                <div class="company-name">One Square Roof LLC</div>
+                <div class="company-name">One Square Roofing LLC</div>
                 <div class="company-details">Charlotte, North Carolina</div>
                 <div class="company-details">Phone: (704) 303-4112</div>
                 <div class="company-details">Email: onesquareroof@gmail.com</div>
@@ -524,14 +621,6 @@ export async function GET(
               </table>
             ` : ""}
 
-            ${invoice?.signature ? `
-              <div class="section-title">Customer Signature</div>
-              <div style="margin-top: 10px;">
-                <div>${invoice.signature.type === "type" ? `Signed by: ${invoice.signature.value}` : "Electronic signature on file"}</div>
-                <div style="font-size: 10px; color: #666;">Signed on: ${formatDate(invoice.signature.date)}</div>
-              </div>
-            ` : ""}
-
             <div class="footer">
               <p>Page 1 of ${projects.length + 2}</p>
             </div>
@@ -540,7 +629,7 @@ export async function GET(
           <!-- PROJECT PAGES -->
           ${projectPagesHtml}
 
-          <!-- FINAL SUMMARY PAGE -->
+          <!-- FINAL PAGE - Terms & Conditions + Signature -->
           <div class="page">
             <div class="section-title">Estimate Summary</div>
             
@@ -549,7 +638,7 @@ export async function GET(
                 <tr>
                   <th>Project Name</th>
                   <th style="text-align: right">Total Amount</th>
-                </tr>
+                <tr>
               </thead>
               <tbody>
                 ${projects.map(project => `
@@ -576,8 +665,33 @@ export async function GET(
               </div>
             </div>
 
+            <!-- Terms & Conditions -->
+            <div class="terms-section">
+              <div class="terms-title">Terms & Conditions</div>
+              <ul class="terms-list">
+                <li>This estimate is valid for 30 days from the date issued.</li>
+                <li>A 50% deposit is required to begin work. Remaining balance due upon completion.</li>
+                <li>Any changes or additions to scope must be approved in writing and may incur additional charges.</li>
+                <li>Client is responsible for providing safe access to work areas.</li>
+                <li>Customer is responsible for marking or notifying contractor of any private underground lines, irrigation, drain lines, low-voltage wires, or hidden utilities.</li>
+                <li>Contractor is not responsible for damage caused by hidden or unmarked underground items.</li>
+                <li>Warranty does not cover damage caused by weather, tree roots, drainage issues, soil movement, customer neglect, or work performed by others.</li>
+                <li>For applicable residential/home-solicitation jobs, customer cancellation rights will follow North Carolina and federal law.</li>
+                <li>Weather delays, material delays, or hidden conditions may affect the schedule.</li>
+                <li>Debris cleanup is only included for the approved scope of work.</li>
+              </ul>
+            </div>
+
+            <!-- Customer Signature Section - Same styling as component -->
+            <div class="customer-signature">
+              <div class="customer-signature-title">Customer Signature</div>
+              <div class="signature-display">
+                ${getSignatureHtml()}
+              </div>
+            </div>
+
             <div class="footer">
-              <p>Thank you for your business! • One Square Roof LLC • (704) 303-4112</p>
+              <p>Thank you for your business! • One Square Roofing LLC • (704) 303-4112</p>
               <p>Page ${projects.length + 2} of ${projects.length + 2}</p>
             </div>
           </div>

@@ -224,7 +224,7 @@ export default function PublicEstimatePage() {
 
                   <div className="md:order-1 text-orange-200">
                     <h2 className="text-lg font-semibold ">
-                      OSR Pros. Services
+                      One Square Roofing LLC
                     </h2>
 
                     <p className="text-[12px]   mt-1">
