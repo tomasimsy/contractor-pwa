@@ -337,7 +337,7 @@ const revenue =
       </div>
       
       {/* Top Profitable Estimates */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-800">📊 Top Profitable Estimates</h3>
         </div>
@@ -359,10 +359,10 @@ const revenue =
             ))
           )}
         </div>
-      </div>
+      </div> */}
       
       {/* Overdue Alert */}
-      {stats.overdueInvoices > 0 && (
+      {/* {stats.overdueInvoices > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-2">
           <AlertCircle size={18} className="text-red-500" />
           <div className="flex-1">
@@ -372,9 +372,9 @@ const revenue =
           <button className="text-xs text-red-600 font-medium">View →</button>
         </div>
       )}
-      
+       */}
       {/* Time Range Selector */}
-      <div className="flex gap-2 justify-end">
+      {/* <div className="flex gap-2 justify-end">
         <button
           onClick={() => setTimeRange("all")}
           className={`px-3 py-1 rounded-lg text-xs transition ${timeRange === "all" ? "bg-green-700 text-white" : "bg-gray-100 text-gray-600"}`}
@@ -399,7 +399,7 @@ const revenue =
         >
           This Year
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }
