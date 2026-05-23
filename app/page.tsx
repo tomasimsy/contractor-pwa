@@ -16,9 +16,9 @@ export default function HomePage({ isLoggedIn }: { isLoggedIn: boolean }) {
             <Image
               src="/OSR_logo.png"
               alt="One Square Roof"
-              width={150}
+              width={100}
               height={42}
-              className="h-10 w-auto object-contain"
+              className="h-5 w-auto object-contain"
             />
           </Link>
 

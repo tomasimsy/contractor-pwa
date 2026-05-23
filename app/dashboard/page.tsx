@@ -108,7 +108,7 @@ export default function Dashboard() {
                   alt="One Square Roof"
                   width={150}
                   height={42}
-                  className="h-10 w-auto object-contain cursor-pointer"
+                  className="h-5 w-auto object-contain cursor-pointer"
                   priority
                 />
               </Link>
