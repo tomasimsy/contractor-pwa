@@ -72,6 +72,11 @@ export type Invoice = {
   due_date: string;
   created_at: string;
   clients?: Client;
+  is_locked?: boolean;
+  locked_at?: string | null;
+  locked_by?: string | null;
+    paid_at?: string | null;        // ✅ Add this
+ 
 };
 
 export type Signature = {
@@ -79,3 +84,5 @@ export type Signature = {
   value: string;
   date: string;
 };
+
+ 

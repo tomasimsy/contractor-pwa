@@ -13,11 +13,11 @@ export async function GET(
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    const { data: estimate } = await supabase
-      .from("estimates")
-      .select("*")
-      .eq("id", id)
-      .single();
+const { data: estimate } = await supabase
+  .from("estimates")
+  .select("*, deposit_signature, deposit_signed_at, final_signature, final_signed_at")
+  .eq("id", id)
+  .single();
 
     if (!estimate) {
       return new NextResponse("Not found", { status: 404 });
@@ -68,6 +68,21 @@ export async function GET(
         day: 'numeric',
       });
     };
+
+    //Signature pads for defposit and final signature
+    const depositSignatureHtml = estimate.deposit_signature
+  ? `<img src="${estimate.deposit_signature}" style="max-height: 40px;" />`
+  : `<div class="signature-field-line"></div>`;
+
+const depositDate = estimate.deposit_signed_at ? formatDate(estimate.deposit_signed_at) : '';
+
+const finalSignatureHtml = estimate.final_signature
+  ? `<img src="${estimate.final_signature}" style="max-height: 40px;" />`
+  : `<div class="signature-field-line"></div>`;
+
+const finalDate = estimate.final_signed_at ? formatDate(estimate.final_signed_at) : '';
+
+
 
     // Generate project pages HTML (each project on its own page)
     const projectPagesHtml = projects.map((project, idx) => `
@@ -579,8 +594,8 @@ export async function GET(
                 and received by One Square Roofing LLC. This deposit secures the commencement of work as outlined in this estimate.
               </div>
               <div class="signature-field">
-                <span class="signature-field-label">Client / Owner Signature:</span>
-                <div class="signature-field-line"></div>
+                <span class="signature-field-label">Clientx / Owner Signature:</span>
+                <div class="signature-field-line">${depositSignatureHtml}</div>
               </div>
               <div class="signature-field">
                 <span class="signature-field-label">Contractor Signature:</span>
@@ -588,7 +603,7 @@ export async function GET(
               </div>
               <div class="signature-field">
                 <span class="signature-field-label">Date:</span>
-                <div class="signature-field-line"></div>
+                <div class="signature-field-line">${depositDate}</div>
               </div>
             </div>
 
