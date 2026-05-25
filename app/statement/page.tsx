@@ -1,0 +1,751 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { formatCurrency } from "@/lib/utils/formatting";
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  Users, 
+  Receipt, 
+  Calendar, 
+  ChevronDown, 
+  ChevronUp,
+  Download,
+  RefreshCw,
+  PieChart,
+  Briefcase,
+  Home,
+  AlertCircle
+} from "lucide-react";
+import Link from "next/link";
+
+type FinancialSummary = {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMargin: number;
+  subcontractorPaid: number;
+  agentPaid: number;
+  outstandingSubcontractor: number;
+  outstandingAgent: number;
+  pendingInvoices: number;
+  completedProjects: number;
+};
+
+type ExpenseCategory = {
+  category: string;
+  total: number;
+  count: number;
+  icon: string;
+};
+
+type RecentTransaction = {
+  id: string;
+  type: "subcontractor" | "agent" | "expense";
+  amount: number;
+  description: string;
+  date: string;
+  estimateNumber?: string;
+  projectName?: string;
+};
+
+type MonthlyTrend = {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+};
+
+export default function FinancialDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<FinancialSummary>({
+    totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    profitMargin: 0,
+    subcontractorPaid: 0,
+    agentPaid: 0,
+    outstandingSubcontractor: 0,
+    outstandingAgent: 0,
+    pendingInvoices: 0,
+    completedProjects: 0,
+  });
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
+  const [expandedSections, setExpandedSections] = useState({
+    breakdown: true,
+    transactions: true,
+    trends: false,
+  });
+  const [timeRange, setTimeRange] = useState<"month" | "quarter" | "year">("month");
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [timeRange]);
+
+  function getErrorMessage(error: any): string {
+    if (!error) return "Unknown error";
+    if (typeof error === 'string') return error;
+    if (error.message) return error.message;
+    if (error.details) return error.details;
+    if (error.hint) return error.hint;
+    return JSON.stringify(error);
+  }
+
+  async function loadDashboardData() {
+    setLoading(true);
+    setError(null);
+    try {
+      const now = new Date();
+      let startDate = new Date();
+      if (timeRange === "month") {
+        startDate.setMonth(now.getMonth() - 1);
+      } else if (timeRange === "quarter") {
+        startDate.setMonth(now.getMonth() - 3);
+      } else {
+        startDate.setFullYear(now.getFullYear() - 1);
+      }
+
+      const startDateStr = startDate.toISOString();
+      console.log("Fetching data from:", startDateStr);
+
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("No active session. Please log in.");
+        setError("Please log in to view financial data.");
+        setLoading(false);
+        return;
+      }
+      console.log("User authenticated:", session.user.email);
+
+      // 1. Fetch all completed estimates (invoices)
+      const { data: estimates, error: estimatesError } = await supabase
+        .from("estimates")
+        .select("id, total, status, completed_at, estimate_number")
+        .in("status", ["completed", "converted"])
+        .gte("completed_at", startDateStr);
+
+      if (estimatesError) {
+        console.error("Estimates fetch error:", estimatesError.message, estimatesError.details);
+        throw new Error(`Failed to fetch estimates: ${estimatesError.message}`);
+      }
+
+      console.log("Fetched estimates:", estimates?.length || 0);
+
+      const totalRevenue = estimates?.reduce((sum, e) => sum + (e.total || 0), 0) || 0;
+      const completedProjects = estimates?.length || 0;
+      const pendingInvoices = estimates?.filter(e => e.status === "converted").length || 0;
+
+      // 2. Fetch subcontractor payments
+      let subcontractorPaid = 0;
+      let subPayments: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("subcontractor_payments")
+          .select("amount, created_at, estimate_subcontractor_id")
+          .gte("created_at", startDateStr);
+        
+        if (error) {
+          console.warn("Subcontractor payments fetch warning:", error.message);
+        } else {
+          subPayments = data || [];
+          subcontractorPaid = subPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        }
+      } catch (subErr) {
+        console.warn("Subcontractor payments error:", subErr);
+      }
+
+      // 3. Get outstanding subcontractor amounts
+      let totalSubAssigned = 0;
+      let totalSubPaid = 0;
+      let outstandingSubcontractor = 0;
+      try {
+        const { data, error } = await supabase
+          .from("estimate_subcontractors")
+          .select("amount, paid_amount");
+        
+        if (error) {
+          console.warn("Assigned subcontractors fetch warning:", error.message);
+        } else if (data) {
+          totalSubAssigned = data.reduce((sum, s) => sum + (s.amount || 0), 0);
+          totalSubPaid = data.reduce((sum, s) => sum + (s.paid_amount || 0), 0);
+          outstandingSubcontractor = totalSubAssigned - totalSubPaid;
+        }
+      } catch (assignedErr) {
+        console.warn("Assigned subcontractors error:", assignedErr);
+      }
+
+      // 4. Fetch agent payments with estimate numbers
+      let agentPaid = 0;
+      let agentPayments: any[] = [];
+      let estimateNumberMap = new Map();
+      let agentNameMap = new Map();
+      
+      try {
+        const { data, error } = await supabase
+          .from("agent_payments")
+          .select("amount, payment_date, agent_id, estimate_id")
+          .gte("payment_date", startDateStr);
+        
+        if (error) {
+          console.warn("Agent payments fetch warning:", error.message);
+        } else if (data) {
+          agentPayments = data;
+          agentPaid = agentPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+          // Get estimate numbers for agent payments
+          const estimateIds = [...new Set(agentPayments.map(p => p.estimate_id).filter(Boolean))];
+          if (estimateIds.length > 0) {
+            const { data: estimateData } = await supabase
+              .from("estimates")
+              .select("id, estimate_number")
+              .in("id", estimateIds);
+            estimateData?.forEach(est => {
+              estimateNumberMap.set(est.id, est.estimate_number);
+            });
+          }
+
+          // Get agent names
+          const agentIds = [...new Set(agentPayments.map(p => p.agent_id).filter(Boolean))];
+          if (agentIds.length > 0) {
+            const { data: agentData } = await supabase
+              .from("agents")
+              .select("id, name")
+              .in("id", agentIds);
+            agentData?.forEach(agent => {
+              agentNameMap.set(agent.id, agent.name);
+            });
+          }
+        }
+      } catch (agentErr) {
+        console.warn("Agent payments error:", agentErr);
+      }
+
+      // 5. Get outstanding agent amounts
+      let totalAgentAssigned = 0;
+      let totalAgentPaid = 0;
+      let outstandingAgent = 0;
+      try {
+        const { data, error } = await supabase
+          .from("estimate_agents")
+          .select("amount, paid_amount");
+        
+        if (error) {
+          console.warn("Assigned agents fetch warning:", error.message);
+        } else if (data) {
+          totalAgentAssigned = data.reduce((sum, a) => sum + (a.amount || 0), 0);
+          totalAgentPaid = data.reduce((sum, a) => sum + (a.paid_amount || 0), 0);
+          outstandingAgent = totalAgentAssigned - totalAgentPaid;
+        }
+      } catch (assignedAgentErr) {
+        console.warn("Assigned agents error:", assignedAgentErr);
+      }
+
+      // 6. Fetch expenses
+      let totalExpenses = 0;
+      let expenses: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("estimate_expenses")
+          .select("amount, category, description, expense_date")
+          .gte("expense_date", startDateStr);
+        
+        if (error) {
+          console.warn("Expenses fetch warning:", error.message);
+        } else if (data) {
+          expenses = data;
+          totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+        }
+      } catch (expenseErr) {
+        console.warn("Expenses error:", expenseErr);
+      }
+
+      // Calculate net profit and margin
+      const netProfit = totalRevenue - totalExpenses - subcontractorPaid - agentPaid;
+      const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+      setSummary({
+        totalRevenue,
+        totalExpenses,
+        netProfit,
+        profitMargin,
+        subcontractorPaid,
+        agentPaid,
+        outstandingSubcontractor,
+        outstandingAgent,
+        pendingInvoices,
+        completedProjects,
+      });
+
+      // 7. Process expense categories
+      const categoryMap = new Map<string, { total: number; count: number; icon: string }>();
+      expenses.forEach(exp => {
+        const existing = categoryMap.get(exp.category);
+        if (existing) {
+          existing.total += exp.amount;
+          existing.count++;
+        } else {
+          categoryMap.set(exp.category, { 
+            total: exp.amount, 
+            count: 1, 
+            icon: getCategoryIcon(exp.category) 
+          });
+        }
+      });
+
+      const categories = Array.from(categoryMap.entries())
+        .map(([category, data]) => ({
+          category,
+          total: data.total,
+          count: data.count,
+          icon: data.icon,
+        }))
+        .sort((a, b) => b.total - a.total);
+
+      setExpenseCategories(categories);
+
+      // 8. Build recent transactions
+      const transactions: RecentTransaction[] = [];
+
+      // Get subcontractor names
+      const subContractorIds = [...new Set(subPayments.map(p => p.estimate_subcontractor_id).filter(Boolean))];
+      let subContractorNameMap = new Map();
+      if (subContractorIds.length > 0) {
+        const { data: subContractorData } = await supabase
+          .from("estimate_subcontractors")
+          .select("id, subcontractors(name)")
+          .in("id", subContractorIds);
+        subContractorData?.forEach(sub => {
+          const name = (sub.subcontractors as any)?.name || "Subcontractor";
+          subContractorNameMap.set(sub.id, name);
+        });
+      }
+
+      subPayments.slice(0, 5).forEach(p => {
+        const subName = subContractorNameMap.get(p.estimate_subcontractor_id) || "Subcontractor";
+        transactions.push({
+          id: `sub-${Date.now()}-${Math.random()}`,
+          type: "subcontractor",
+          amount: p.amount,
+          description: `Payment to ${subName}`,
+          date: p.created_at,
+        });
+      });
+
+      agentPayments.slice(0, 5).forEach(p => {
+        const agentName = agentNameMap.get(p.agent_id) || "Agent";
+        const estimateNumber = estimateNumberMap.get(p.estimate_id);
+        transactions.push({
+          id: `agent-${Date.now()}-${Math.random()}`,
+          type: "agent",
+          amount: p.amount,
+          description: `Commission to ${agentName}`,
+          date: p.payment_date,
+          estimateNumber: estimateNumber,
+        });
+      });
+
+      expenses.slice(0, 5).forEach(e => {
+        transactions.push({
+          id: `exp-${Date.now()}-${Math.random()}`,
+          type: "expense",
+          amount: e.amount,
+          description: e.description,
+          date: e.expense_date,
+        });
+      });
+
+      transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setRecentTransactions(transactions.slice(0, 10));
+
+      // 9. Calculate monthly trends
+      const monthlyData = new Map<string, { revenue: number; expenses: number }>();
+      
+      estimates?.forEach(est => {
+        if (est.completed_at) {
+          const month = new Date(est.completed_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          const existing = monthlyData.get(month) || { revenue: 0, expenses: 0 };
+          existing.revenue += est.total || 0;
+          monthlyData.set(month, existing);
+        }
+      });
+
+      expenses.forEach(exp => {
+        const month = new Date(exp.expense_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const existing = monthlyData.get(month) || { revenue: 0, expenses: 0 };
+        existing.expenses += exp.amount;
+        monthlyData.set(month, existing);
+      });
+
+      const trends = Array.from(monthlyData.entries())
+        .map(([month, data]) => ({
+          month,
+          revenue: data.revenue,
+          expenses: data.expenses,
+          profit: data.revenue - data.expenses,
+        }))
+        .sort((a, b) => {
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const aMonth = months.indexOf(a.month.split(' ')[0]);
+          const bMonth = months.indexOf(b.month.split(' ')[0]);
+          return aMonth - bMonth;
+        })
+        .slice(-6);
+
+      setMonthlyTrends(trends);
+
+    } catch (err: any) {
+      console.error("Error loading dashboard data:", err);
+      const errorMsg = getErrorMessage(err);
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function getCategoryIcon(category: string): string {
+    const icons: Record<string, string> = {
+      materials: "🔨",
+      equipment: "🔧",
+      permits: "📋",
+      travel: "🚗",
+      labor: "👷",
+      rental: "🏗️",
+      other: "📦",
+    };
+    return icons[category] || "📦";
+  }
+
+  function getTransactionIcon(type: string) {
+    switch (type) {
+      case "subcontractor": return "👷";
+      case "agent": return "🤝";
+      case "expense": return "📄";
+      default: return "💰";
+    }
+  }
+
+  function getTransactionColor(type: string) {
+    switch (type) {
+      case "subcontractor": return "text-orange-600 bg-orange-50";
+      case "agent": return "text-blue-600 bg-blue-50";
+      case "expense": return "text-red-600 bg-red-50";
+      default: return "text-gray-600 bg-gray-50";
+    }
+  }
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw size={32} className="animate-spin text-green-600 mx-auto mb-3" />
+          <p className="text-gray-500">Loading financial data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md bg-white rounded-xl p-6 shadow-sm">
+          <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+          <p className="text-gray-800 font-medium mb-2">Unable to load data</p>
+          <p className="text-gray-500 text-sm mb-4">{error}</p>
+          <div className="bg-gray-50 p-3 rounded-lg mb-4 text-left">
+            <p className="text-xs text-gray-500">
+              Please make sure you are logged in and have access to the following tables:
+            </p>
+            <ul className="text-xs text-gray-500 mt-2 list-disc list-inside">
+              <li>estimates</li>
+              <li>subcontractor_payments</li>
+              <li>estimate_subcontractors</li>
+              <li>agent_payments</li>
+              <li>estimate_agents</li>
+              <li>estimate_expenses</li>
+              <li>agents</li>
+              <li>subcontractors</li>
+            </ul>
+          </div>
+          <button 
+            onClick={loadDashboardData}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-lg font-bold text-gray-800">Financial Dashboard</h1>
+            <p className="text-xs text-gray-400">Real-time financial overview</p>
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as any)}
+              className="text-xs border rounded-lg px-2 py-1.5 bg-white"
+            >
+              <option value="month">Last 30 days</option>
+              <option value="quarter">Last 90 days</option>
+              <option value="year">Last 12 months</option>
+            </select>
+            <button onClick={loadDashboardData} className="p-1.5 text-gray-400 hover:text-gray-600">
+              <RefreshCw size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto p-3 space-y-3">
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-400">Revenue</span>
+              <DollarSign size={16} className="text-green-600" />
+            </div>
+            <div className="text-xl font-bold text-gray-800">{formatCurrency(summary.totalRevenue)}</div>
+            <div className="text-[10px] text-gray-400 mt-1">{summary.completedProjects} projects</div>
+          </div>
+
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-400">Expenses</span>
+              <TrendingDown size={16} className="text-red-600" />
+            </div>
+            <div className="text-xl font-bold text-red-600">{formatCurrency(summary.totalExpenses)}</div>
+            <div className="text-[10px] text-gray-400 mt-1">
+              {summary.totalExpenses > 0 ? `${Math.round((summary.totalExpenses / summary.totalRevenue) * 100)}% of revenue` : 'No expenses'}
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 shadow-sm border border-green-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-green-700">Net Profit</span>
+              <TrendingUp size={16} className="text-green-700" />
+            </div>
+            <div className={`text-xl font-bold ${summary.netProfit >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+              {formatCurrency(summary.netProfit)}
+            </div>
+            <div className="text-[10px] text-green-600 mt-1">Margin: {summary.profitMargin.toFixed(1)}%</div>
+          </div>
+
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-400">Profit Margin</span>
+              <PieChart size={16} className="text-blue-600" />
+            </div>
+            <div className={`text-xl font-bold ${
+              summary.profitMargin >= 20 ? 'text-green-600' : 
+              summary.profitMargin >= 10 ? 'text-yellow-600' : 
+              summary.profitMargin >= 0 ? 'text-orange-600' : 'text-red-600'
+            }`}>
+              {summary.profitMargin.toFixed(1)}%
+            </div>
+            <div className="text-[10px] text-gray-400 mt-1">{summary.netProfit >= 0 ? 'Profitable' : 'Loss'}</div>
+          </div>
+        </div>
+
+        {/* Payments Summary Cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-orange-50 rounded-xl p-3 border border-orange-100">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-orange-700">Subcontractors</span>
+              <Users size={14} className="text-orange-600" />
+            </div>
+            <div className="text-lg font-bold text-orange-700">{formatCurrency(summary.subcontractorPaid)}</div>
+            <div className="text-[10px] text-orange-600 mt-1">
+              Paid • {summary.outstandingSubcontractor > 0 && `${formatCurrency(summary.outstandingSubcontractor)} owed`}
+            </div>
+          </div>
+          <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-blue-700">Agents</span>
+              <Briefcase size={14} className="text-blue-600" />
+            </div>
+            <div className="text-lg font-bold text-blue-700">{formatCurrency(summary.agentPaid)}</div>
+            <div className="text-[10px] text-blue-600 mt-1">
+              Paid • {summary.outstandingAgent > 0 && `${formatCurrency(summary.outstandingAgent)} owed`}
+            </div>
+          </div>
+        </div>
+
+        {/* Expense Categories */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <button
+            onClick={() => toggleSection("breakdown")}
+            className="w-full flex justify-between items-center p-3 bg-gray-50 hover:bg-gray-100 transition"
+          >
+            <div className="flex items-center gap-2">
+              <Receipt size={16} className="text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Expense Breakdown</span>
+              <span className="text-xs text-gray-400">({expenseCategories.length} categories)</span>
+            </div>
+            {expandedSections.breakdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          
+          {expandedSections.breakdown && (
+            <div className="p-3 space-y-2">
+              {expenseCategories.length === 0 ? (
+                <div className="text-center py-6 text-gray-400 text-sm">No expenses recorded</div>
+              ) : (
+                expenseCategories.map((cat) => (
+                  <div key={cat.category} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{cat.icon}</span>
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 capitalize">{cat.category}</div>
+                        <div className="text-[10px] text-gray-400">{cat.count} transaction{cat.count !== 1 ? 's' : ''}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-gray-800">{formatCurrency(cat.total)}</div>
+                      <div className="text-[10px] text-gray-400">
+                        {summary.totalExpenses > 0 ? Math.round((cat.total / summary.totalExpenses) * 100) : 0}%
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-sm">
+                <span>Total Expenses</span>
+                <span className="text-red-600">{formatCurrency(summary.totalExpenses)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Transactions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <button
+            onClick={() => toggleSection("transactions")}
+            className="w-full flex justify-between items-center p-3 bg-gray-50 hover:bg-gray-100 transition"
+          >
+            <div className="flex items-center gap-2">
+              <Calendar size={16} className="text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Recent Transactions</span>
+              <span className="text-xs text-gray-400">({recentTransactions.length})</span>
+            </div>
+            {expandedSections.transactions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          
+          {expandedSections.transactions && (
+            <div className="divide-y divide-gray-100">
+              {recentTransactions.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-sm">No recent transactions</div>
+              ) : (
+                recentTransactions.map((tx) => (
+                  <div key={tx.id} className="p-3 flex justify-between items-start hover:bg-gray-50 transition">
+                    <div className="flex items-start gap-2 flex-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${getTransactionColor(tx.type)}`}>
+                        <span className="text-sm">{getTransactionIcon(tx.type)}</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-800">{tx.description}</div>
+                        <div className="text-[10px] text-gray-400">
+                          {new Date(tx.date).toLocaleDateString()}
+                        </div>
+                        {tx.type === "agent" && tx.estimateNumber && (
+                          <div className="text-[10px] font-mono text-blue-500 mt-0.5">
+                            📄 Estimate #{tx.estimateNumber}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`text-sm font-semibold shrink-0 ml-3 ${tx.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
+                      {tx.type === 'expense' ? '-' : ''}{formatCurrency(tx.amount)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Monthly Trends */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <button
+            onClick={() => toggleSection("trends")}
+            className="w-full flex justify-between items-center p-3 bg-gray-50 hover:bg-gray-100 transition"
+          >
+            <div className="flex items-center gap-2">
+              <TrendingUp size={16} className="text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Monthly Trends</span>
+              <span className="text-xs text-gray-400">Last {monthlyTrends.length} months</span>
+            </div>
+            {expandedSections.trends ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          
+          {expandedSections.trends && (
+            <div className="p-3 space-y-3">
+              {monthlyTrends.length === 0 ? (
+                <div className="text-center py-6 text-gray-400 text-sm">No trend data available</div>
+              ) : (
+                monthlyTrends.map((trend) => (
+                  <div key={trend.month} className="border-b border-gray-100 last:border-0 pb-3 last:pb-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium text-gray-700">{trend.month}</span>
+                      <span className={`text-sm font-bold ${trend.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(trend.profit)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Revenue: {formatCurrency(trend.revenue)}</span>
+                      <span>Expenses: {formatCurrency(trend.expenses)}</span>
+                    </div>
+                    <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-green-500 rounded-full transition-all duration-500" 
+                        style={{ width: `${trend.revenue > 0 ? Math.min(100, (trend.profit / trend.revenue) * 100) : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <button 
+            onClick={() => {
+              alert("Export feature coming soon!");
+            }}
+            className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+          >
+            <Download size={14} /> Export Report
+          </button>
+          <Link href="/dashboard" className="block">
+            <button className="w-full py-2.5 rounded-xl bg-green-700 text-white text-sm font-medium flex items-center justify-center gap-2 hover:bg-green-800 transition">
+              <Home size={14} /> Full Dashboard
+            </button>
+          </Link>
+        </div>
+
+        <div className="text-center pt-2">
+          <p className="text-[10px] text-gray-400">
+            Last updated: {new Date().toLocaleTimeString()}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
