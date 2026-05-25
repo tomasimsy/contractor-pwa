@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/ui/BottomNav";
-
+ 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
