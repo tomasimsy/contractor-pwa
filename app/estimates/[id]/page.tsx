@@ -628,13 +628,30 @@ export default function EstimatePage() {
 
         {/* Description */}
         {isEditMode ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20">
-            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none" rows={2} placeholder="Description..." />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 transition-all focus-within:border-green-500 focus-within:ring-4 focus-within:ring-green-500/10">
+            
+            <div className="text-[11px] font-medium text-gray-500 mb-2">
+              Description
+            </div>
+
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              className="w-full min-h-[140px] text-xs leading-relaxed text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none"
+              rows={6}
+              placeholder="Enter project description..."
+            />
           </div>
         ) : (
-          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-            <div className="text-[11px] text-gray-500 mb-1">Description</div>
-            <p className="text-[10px] text-gray-600 capitalize">{estimate?.description || "No description"}</p>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            
+            <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500 mb-2">
+              Description
+            </div>
+
+            <p className="text-[12px] leading-relaxed text-gray-700 whitespace-pre-wrap capitalize">
+              {estimate?.description || "No description provided"}
+            </p>
           </div>
         )}
 

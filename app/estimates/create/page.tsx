@@ -317,13 +317,13 @@ export default function CreateEstimate() {
 
           {/* Description */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 transition-all duration-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20">
-  <textarea
-    value={description}
-    onChange={(e) => setDescription(e.target.value)}
-    className="w-full text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none capitalize"
-    rows={2}
-    placeholder="Brief description of work..."
-  />
+<textarea
+  value={description}
+  onChange={(e) => setDescription(e.target.value)}
+  className="w-full min-h-[100px] text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none capitalize"
+  rows={5}
+  placeholder="Brief description of work..."
+/>
 </div>
 
           {/* Projects */}
