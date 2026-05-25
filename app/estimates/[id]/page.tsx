@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/utils/formatting";
 import { calculateSubtotal, calculateTax, calculateTotal } from "@/lib/utils/calculations";
 import Header from "@/components/ui/Header";
 import SignaturePad from "@/components/signature/SignaturePad";
- import ProjectFinancialsModal from "@/components/ProjectFinancialsModal";
+import ProjectFinancialsModal from "@/components/ProjectFinancialsModal";
 import ExpenseModal from "@/components/ExpenseModal";
 import Link from "next/link";
 import { SquarePen, Send, FileText, Users, Receipt, DollarSign } from "lucide-react";
@@ -18,6 +18,7 @@ type ProjectWithItems = {
   name: string;
   description: string;
   items: LineItem[];
+  
 };
 
 export default function EstimatePage() {
@@ -30,11 +31,13 @@ export default function EstimatePage() {
   const [projects, setProjects] = useState<ProjectWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
+  const [existingInvoiceId, setExistingInvoiceId] = useState<string | null>(null);
   const fabRef = useRef<HTMLDivElement>(null);
   
   // Modal states
-   const [showExpenseModal, setShowExpenseModal] = useState(false);
-   const [showFinancialsModal, setShowFinancialsModal] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showFinancialsModal, setShowFinancialsModal] = useState(false);
+  
   // Financial tracking
   const [subcontractorPaid, setSubcontractorPaid] = useState(0);
   
@@ -60,6 +63,23 @@ export default function EstimatePage() {
     loadEstimate();
     loadSubcontractorPaid();
   }, [id]);
+
+  // Check for existing invoice
+  useEffect(() => {
+    const checkExistingInvoice = async () => {
+      if (estimate?.id) {
+        const { data } = await supabase
+          .from("invoices")
+          .select("id")
+          .eq("estimate_id", estimate.id)
+          .maybeSingle();
+        if (data) {
+          setExistingInvoiceId(data.id);
+        }
+      }
+    };
+    checkExistingInvoice();
+  }, [estimate?.id]);
 
   // Auto-scroll to newly added item
   useEffect(() => {
@@ -91,18 +111,18 @@ export default function EstimatePage() {
   }, [fabOpen]);
 
   // Load subcontractor paid amount
-async function loadSubcontractorPaid() {
-  const { data } = await supabase
-    .from("subcontractor_payments")
-    .select("amount")
-    .eq("estimate_id", id);
-  
-  if (data) {
-    const total = data.reduce((sum, p) => sum + (p.amount || 0), 0);
-    setSubcontractorPaid(total);
-    console.log("🔵 loadSubcontractorPaid - Total paid to subcontractors:", total);
-   }
-}
+  async function loadSubcontractorPaid() {
+    const { data } = await supabase
+      .from("subcontractor_payments")
+      .select("amount")
+      .eq("estimate_id", id);
+    
+    if (data) {
+      const total = data.reduce((sum, p) => sum + (p.amount || 0), 0);
+      setSubcontractorPaid(total);
+      console.log("🔵 loadSubcontractorPaid - Total paid to subcontractors:", total);
+    }
+  }
 
   // Load estimate data
   async function loadEstimate() {
@@ -110,9 +130,8 @@ async function loadSubcontractorPaid() {
       const { data: est } = await supabase
         .from("estimates")
         .select("*")
-        .is("deleted_at", null)  // ← ADD THIS
+        .is("deleted_at", null)
         .eq("id", id)
-        
         .single();
       setEstimate(est);
 
@@ -171,47 +190,143 @@ async function loadSubcontractorPaid() {
     }
   };
 
-const removeSignature = async () => {
-  if (!confirm("Remove the signature? The estimate will need to be resigned.")) return;
-  
-  const { error } = await supabase
-    .from("estimates")
-    .update({ signature: null, status: "pending" })
-    .eq("id", id);
-  
-  if (!error) {
-    setEstimate((prev) => (prev ? { ...prev, signature: null, status: "pending" } : prev));
-    alert("Signature removed. Customer will need to sign again.");
-    loadEstimate();
-  } else {
-    alert("Error removing signature");
-  }
-};
+  const removeSignature = async () => {
+    if (!confirm("Remove the signature? The estimate will need to be resigned.")) return;
+    
+    const { error } = await supabase
+      .from("estimates")
+      .update({ signature: null, status: "pending" })
+      .eq("id", id);
+    
+    if (!error) {
+      setEstimate((prev) => (prev ? { ...prev, signature: null, status: "pending" } : prev));
+      alert("Signature removed. Customer will need to sign again.");
+      loadEstimate();
+    } else {
+      alert("Error removing signature");
+    }
+  };
 
+  // Mark as completed
+  const markAsCompleted = async () => {
+    if (!confirm("Mark this estimate as completed? It will be moved to completed list and won't be editable.")) return;
+    
+    const { error } = await supabase
+      .from("estimates")
+      .update({ 
+        completed_at: new Date().toISOString(),
+        is_completed: true,
+        status: "completed"
+      })
+      .eq("id", id);
+    
+    if (!error) {
+      alert("Estimate marked as completed!");
+      loadEstimate();
+      router.push("/estimates/completed");
+    } else {
+      alert("Error marking as completed");
+    }
+  };
 
-// Add this function
-const markAsCompleted = async () => {
-  if (!confirm("Mark this estimate as completed? It will be moved to completed list and won't be editable.")) return;
-  
-  const { error } = await supabase
-    .from("estimates")
-    .update({ 
-      completed_at: new Date().toISOString(),
-      is_completed: true,
-      status: "completed"
-    })
-    .eq("id", id);
-  
-  if (!error) {
-    alert("Estimate marked as completed!");
-    loadEstimate();
-    router.push("/estimates/completed");
-  } else {
-    alert("Error marking as completed");
-  }
-};
+  // Convert to invoice
+  const convertToInvoice = async () => {
+    if (!estimate) return;
+    
+    // Check if invoice already exists by querying the invoices table
+    const { data: existingInvoice } = await supabase
+      .from("invoices")
+      .select("id")
+      .eq("estimate_id", id)
+      .maybeSingle();
 
+    if (existingInvoice) {
+      alert(`Invoice already exists for this estimate.`);
+      router.push(`/invoices/${existingInvoice.id}`);
+      return;
+    }
+    
+    if (!confirm("Convert this estimate to an invoice? This will lock the estimate.")) return;
+    setConverting(true);
 
+    try {
+      const invoiceNumber = estimate.estimate_number;
+
+      // Prevent duplicate invoice numbers
+      const { data: duplicateInvoice } = await supabase
+        .from("invoices")
+        .select("id")
+        .eq("invoice_number", invoiceNumber)
+        .maybeSingle();
+
+      if (duplicateInvoice) {
+        alert(`Invoice #${invoiceNumber} already exists`);
+        setConverting(false);
+        router.push(`/invoices/${duplicateInvoice.id}`);
+        return;
+      }
+
+      const { data: items, error: itemsFetchError } = await supabase
+        .from("estimate_items")
+        .select("*")
+        .eq("estimate_id", id);
+
+      if (itemsFetchError || !items || items.length === 0) {
+        alert("No items found on this estimate");
+        setConverting(false);
+        return;
+      }
+
+      const { data: invoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .insert({
+          estimate_id: id,
+          client_id: estimate.client_id,
+          invoice_number: invoiceNumber,
+          description: estimate.description,
+          subtotal: viewSubtotal,
+          markup: estimate.markup || 0,
+          discount: estimate.discount || 0,
+          tax: viewTax,
+          total: viewTotal,
+          remaining_balance: viewTotal,
+          amount_paid: 0,
+          notes: estimate.notes,
+          signature: estimate.signature,
+          issue_date: new Date().toISOString().split("T")[0],
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        })
+        .select()
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      const itemsToCopy = items.map((item) => ({
+        invoice_id: invoice.id,
+        project_name: item.project_name || "Main Project",
+        category: item.category,
+        name: item.name,
+        description: item.description || "",
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        taxable: item.taxable,
+        total: item.total,
+      }));
+
+      await supabase.from("invoice_items").insert(itemsToCopy);
+      await supabase.from("estimates").update({ 
+        status: "converted"
+      }).eq("id", id);
+
+      alert("Invoice created successfully!");
+      router.push(`/invoices/${invoice.id}`);
+    } catch (err) {
+      console.error(err);
+      alert("Error creating invoice");
+    } finally {
+      setConverting(false);
+    }
+  };
 
   // Edit mode functions
   const addEditItem = (projectId: string) => {
@@ -435,74 +550,6 @@ const markAsCompleted = async () => {
     window.location.href = `sms:${phoneNumber}?body=${message}`;
   };
 
-  // Convert to invoice
-  const convertToInvoice = async () => {
-    if (!estimate) return;
-    if (!confirm("Convert this estimate to an invoice? This will lock the estimate.")) return;
-    setConverting(true);
-
-    try {
-      const invoiceNumber = estimate.estimate_number;
-      const { data: items, error: itemsFetchError } = await supabase
-        .from("estimate_items")
-        .select("*")
-        .eq("estimate_id", id);
-
-      if (itemsFetchError || !items || items.length === 0) {
-        alert("No items found on this estimate");
-        setConverting(false);
-        return;
-      }
-
-      const { data: invoice, error: invoiceError } = await supabase
-        .from("invoices")
-        .insert({
-          estimate_id: id,
-          client_id: estimate.client_id,
-          invoice_number: invoiceNumber,
-          description: estimate.description,
-          subtotal: viewSubtotal,
-          markup: estimate.markup || 0,
-          discount: estimate.discount || 0,
-          tax: viewTax,
-          total: viewTotal,
-          remaining_balance: viewTotal,
-          amount_paid: 0,
-          notes: estimate.notes,
-          signature: estimate.signature,
-          issue_date: new Date().toISOString().split("T")[0],
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        })
-        .select()
-        .single();
-
-      if (invoiceError) throw invoiceError;
-
-      const itemsToCopy = items.map((item) => ({
-        invoice_id: invoice.id,
-        project_name: item.project_name || "Main Project",
-        category: item.category,
-        name: item.name,
-        description: item.description || "",
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        taxable: item.taxable,
-        total: item.total,
-      }));
-
-      await supabase.from("invoice_items").insert(itemsToCopy);
-      await supabase.from("estimates").update({ status: "converted", invoice_id: invoice.id }).eq("id", id);
-
-      alert("Invoice created successfully!");
-      router.push(`/invoices/${invoice.id}`);
-    } catch (err) {
-      console.error(err);
-      alert("Error creating invoice");
-    } finally {
-      setConverting(false);
-    }
-  };
-
   if (loading) return <div className="p-8 text-center">Loading...</div>;
 
   return (
@@ -714,13 +761,15 @@ const markAsCompleted = async () => {
         {!isEditMode && (
           <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
             <div className="text-[11px] text-gray-500 mb-2">Customer Signature</div>
-<SignaturePad
-  onSave={saveSignature}
-  onRemove={removeSignature}  // ← This must be passed
-  existingSignature={estimate?.signature}
-  buttonText="Sign & Approve Estimate"
-  showRemoveButton={true}  // ← This must be true
-/>          </div>
+            <SignaturePad
+              onSave={saveSignature}
+              onRemove={removeSignature}
+              isCompleted={estimate?.is_completed}
+              existingSignature={estimate?.signature}
+              buttonText="Sign & Approve Estimate"
+              showRemoveButton={true}
+            />
+          </div>
         )}
 
         {/* Notes */}
@@ -737,137 +786,151 @@ const markAsCompleted = async () => {
           )
         )}
 
-        {/* Convert Button */}
-        {!isEditMode && estimate?.signature && estimate?.status !== "converted" && (
-          <button onClick={convertToInvoice} disabled={converting} className="w-full py-3 rounded-xl bg-green-700 text-white text-sm font-medium hover:bg-green-800 disabled:opacity-50 transition">
-            {converting ? "Converting..." : "Convert to Invoice"}
+        {/* Convert Button - Updated to check existing invoice */}
+        {!isEditMode && estimate?.signature && (
+          <>
+            {existingInvoiceId ? (
+              <button
+                onClick={() => router.push(`/invoices/${existingInvoiceId}`)}
+                className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition"
+              >
+                View Invoice (Already Created)
+              </button>
+            ) : (
+              <button
+                onClick={convertToInvoice}
+                disabled={converting}
+                className="w-full py-3 rounded-xl bg-green-700 text-white text-sm font-medium hover:bg-green-800 disabled:opacity-50 transition"
+              >
+                {converting ? "Converting..." : "Convert to Invoice"}
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Mark as Completed Button */}
+        {!isEditMode && estimate?.signature && estimate?.status !== "converted" && estimate?.status !== "completed" && (
+          <button
+            onClick={markAsCompleted}
+            className="w-full py-3 rounded-xl bg-blue-700 text-white text-sm font-medium hover:bg-blue-800 transition"
+          >
+            ✅ Mark as Completed
           </button>
         )}
       </div>
-{/* // Add button in the action area (near convert button) */}
-{!isEditMode && estimate?.signature && estimate?.status !== "converted" && estimate?.status !== "completed" && (
-  <button
-    onClick={markAsCompleted}
-    className="w-full py-3 rounded-xl bg-blue-700 text-white text-sm font-medium hover:bg-blue-800 transition"
-  >
-    ✅ Mark as Completed
-  </button>
-)}
+
       {/* FAB */}
       {!isEditMode && (
-<div
-  ref={fabRef}
-  className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none"
->
-  
-  {/* FAB Menu */}
-  <div
-    className={`flex flex-col items-end gap-2 origin-bottom-right transition-all duration-200 ${
-      fabOpen
-        ? "opacity-100 translate-y-0 scale-100"
-        : "opacity-0 translate-y-3 scale-95"
-    }`}
-  >
-    
-    {/* Edit */}
-    {!estimate?.signature && (
-      <button
-        onClick={() => {
-          setIsEditMode(true);
-          setFabOpen(false);
-        }}
-        className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm shadow-lg border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all ${
-          fabOpen ? "" : "pointer-events-none"
-        }`}
-      >
-        <SquarePen size={14} />
-        Edit
-      </button>
-    )}
+        <div
+          ref={fabRef}
+          className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none"
+        >
+          {/* FAB Menu */}
+          <div
+            className={`flex flex-col items-end gap-2 origin-bottom-right transition-all duration-200 ${
+              fabOpen
+                ? "opacity-100 translate-y-0 scale-100"
+                : "opacity-0 translate-y-3 scale-95"
+            }`}
+          >
+            {/* Edit */}
+            {!estimate?.signature && (
+              <button
+                onClick={() => {
+                  setIsEditMode(true);
+                  setFabOpen(false);
+                }}
+                className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
+                  fabOpen ? "" : "pointer-events-none"
+                }`}
+              >
+                <SquarePen size={14} />
+                Edit
+              </button>
+            )}
 
-    {/* Financials */}
-    <button
-      onClick={() => {
-        setShowFinancialsModal(true);
-        setFabOpen(false);
-      }}
-      className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm shadow-lg border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all ${
-        fabOpen ? "" : "pointer-events-none"
-      }`}
-    >
-      <DollarSign size={14} />
-      Financials
-    </button>
+            {/* Financials */}
+            <button
+              onClick={() => {
+                setShowFinancialsModal(true);
+                setFabOpen(false);
+              }}
+              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
+                fabOpen ? "" : "pointer-events-none"
+              }`}
+            >
+              <DollarSign size={14} />
+              Financials
+            </button>
 
-    {/* Expenses */}
-    <button
-      onClick={() => {
-        setShowExpenseModal(true);
-        setFabOpen(false);
-      }}
-      className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm shadow-lg border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all ${
-        fabOpen ? "" : "pointer-events-none"
-      }`}
-    >
-      <Receipt size={14} />
-      Expenses
-    </button>
+            {/* Expenses */}
+            <button
+              onClick={() => {
+                setShowExpenseModal(true);
+                setFabOpen(false);
+              }}
+              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
+                fabOpen ? "" : "pointer-events-none"
+              }`}
+            >
+              <Receipt size={14} />
+              Expenses
+            </button>
 
-    {/* SMS */}
-    <button
-      onClick={() => {
-        sendSMSLink();
-        setFabOpen(false);
-      }}
-      className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm shadow-lg border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all ${
-        fabOpen ? "" : "pointer-events-none"
-      }`}
-    >
-      <Send size={14} />
-      Send SMS
-    </button>
+            {/* SMS */}
+            <button
+              onClick={() => {
+                sendSMSLink();
+                setFabOpen(false);
+              }}
+              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
+                fabOpen ? "" : "pointer-events-none"
+              }`}
+            >
+              <Send size={14} />
+              Send SMS
+            </button>
 
-    {/* PDF */}
-    <Link
-      href={`/api/estimates/${id}/pdf`}
-      target="_blank"
-      onClick={() => setFabOpen(false)}
-      className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm shadow-lg border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all ${
-        fabOpen ? "" : "pointer-events-none"
-      }`}
-    >
-      <FileText size={14} />
-      PDF
-    </Link>
-  </div>
+            {/* PDF */}
+            <Link
+              href={`/api/estimates/${id}/pdf`}
+              target="_blank"
+              onClick={() => setFabOpen(false)}
+              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
+                fabOpen ? "" : "pointer-events-none"
+              }`}
+            >
+              <FileText size={14} />
+              PDF
+            </Link>
+          </div>
 
-  {/* Main FAB */}
-  <button
-    onClick={() => setFabOpen(!fabOpen)}
-    className="pointer-events-auto h-14 w-14 rounded-full bg-green-700 text-white shadow-xl hover:bg-green-800 transition-all duration-200 flex items-center justify-center active:scale-95"
-  >
-    <span
-      className={`text-2xl font-bold transition-transform duration-300 ${
-        fabOpen ? "rotate-45" : "rotate-0"
-      }`}
-    >
-      +
-    </span>
-  </button>
-</div>
+          {/* Main FAB */}
+          <button
+            onClick={() => setFabOpen(!fabOpen)}
+            className="pointer-events-auto h-14 w-14 rounded-full bg-green-700 text-white shadow-xl hover:bg-green-800 transition-all duration-200 flex items-center justify-center active:scale-95"
+          >
+            <span
+              className={`text-2xl font-bold transition-transform duration-300 ${
+                fabOpen ? "rotate-45" : "rotate-0"
+              }`}
+            >
+              +
+            </span>
+          </button>
+        </div>
       )}
 
-
-    <ProjectFinancialsModal
-  isOpen={showFinancialsModal}
-  onClose={() => setShowFinancialsModal(false)}
-  estimateId={id as string}
-  estimateTotal={viewTotal}
-  onRefresh={() => {
-    loadSubcontractorPaid();
-    loadEstimate();
-  }}
-/>
+      <ProjectFinancialsModal
+        isOpen={showFinancialsModal}
+        onClose={() => setShowFinancialsModal(false)}
+        estimateId={id as string}
+        estimateTotal={viewTotal}
+        onRefresh={() => {
+          loadSubcontractorPaid();
+          loadEstimate();
+        }}
+      />
 
       <ExpenseModal
         isOpen={showExpenseModal}

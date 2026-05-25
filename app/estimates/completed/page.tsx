@@ -106,12 +106,12 @@ export default function CompletedEstimatesPage() {
                         {formatCurrency(est.total)}
                       </div>
                       <div className="flex gap-2 mt-2">
-                        {/* <button
+                        <button
                           onClick={() => router.push(`/estimates/${est.id}`)}
                           className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-1"
                         >
                           <Eye size={14} /> View
-                        </button> */}
+                        </button>
                         <button
                           onClick={() => restoreEstimate(est.id)}
                           disabled={restoring === est.id}

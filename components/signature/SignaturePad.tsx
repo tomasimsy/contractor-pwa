@@ -9,6 +9,7 @@ interface SignaturePadProps {
   existingSignature?: Signature | null;
   buttonText?: string;
   showRemoveButton?: boolean;
+  isCompleted?: boolean;
 }
 
 const BRAND_GREEN = "#0e542c";
@@ -17,6 +18,7 @@ export default function SignaturePad({
   onSave,
   onRemove,
   existingSignature,
+  isCompleted,
   buttonText = "Sign Document",
   showRemoveButton = true,
 }: SignaturePadProps) {
@@ -25,6 +27,7 @@ export default function SignaturePad({
   const [typedName, setTypedName] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -170,16 +173,16 @@ const handleRemoveClick = () => {
         <div className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm relative">
           {/* Remove Button - Top Right Corner */}
  
-          {showRemoveButton && onRemove && (
-            <button
-              type="button"
-              onClick={handleRemoveClick}
-              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold    shadow-sm"
-              title="Remove Signature"
-            >
-              X
-            </button>
-          )}
+{showRemoveButton && onRemove && !isCompleted && (
+  <button
+    type="button"
+    onClick={handleRemoveClick}
+    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold shadow-sm"
+    title="Remove Signature"
+  >
+    X
+  </button>
+)}
           
           {existingSignature.type === "draw" ? (
             <img

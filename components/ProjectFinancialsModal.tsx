@@ -541,32 +541,71 @@ async function updateAgentPayment(paymentId: string, newAmount: number, agentId:
 
 
 async function recordAgentPayment() {
-  if (!selectedAgentForPayment || agentPaymentAmount <= 0) {
-    alert("Enter a valid amount");
+  if (!selectedAgentForPayment) {
+    alert("No agent selected");
     return;
   }
-  
-  setSaving(true);
-  
-  // Record payment
-  const { error } = await supabase.from("agent_payments").insert({
-    estimate_id: estimateId,
-    agent_id: selectedAgentForPayment.agent_id,
-    amount: agentPaymentAmount,
-    payment_method: agentPaymentMethod,
-  });
-  
-  if (!error) {
+
+  if (agentPaymentAmount <= 0) {
+    alert("Enter valid payment amount");
+    return;
+  }
+
+  const remainingOwed =
+    (selectedAgentForPayment.amount || 0) -
+    (selectedAgentForPayment.paid_amount || 0);
+
+  if (agentPaymentAmount > remainingOwed) {
+    alert(`Cannot pay more than owed (${formatCurrency(remainingOwed)})`);
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const { error } = await supabase
+      .from("agent_payments")
+      .insert({
+        estimate_id: estimateId,
+        agent_id: selectedAgentForPayment.agent_id,
+        amount: Number(agentPaymentAmount),
+        payment_method: agentPaymentMethod,
+      });
+
+    if (error) {
+      console.error(error);
+      alert(error.message);
+      return;
+    }
+
+    // Update local UI instantly
+    setAssignedAgents((prev) =>
+      prev.map((a) =>
+        a.id === selectedAgentForPayment.id
+          ? {
+              ...a,
+              paid_amount:
+                (a.paid_amount || 0) + Number(agentPaymentAmount),
+            }
+          : a
+      )
+    );
+
     setShowAgentPaymentModal(false);
     setAgentPaymentAmount(0);
-    alert(`Payment of ${formatCurrency(agentPaymentAmount)} recorded for ${selectedAgentForPayment.agents?.name}`);
-    loadAllData(); // Refresh to show updated paid amounts
+
+    await loadAllData();
     onRefresh();
-  } else {
-    alert("Error recording payment");
+
+    alert(
+      `Payment of ${formatCurrency(agentPaymentAmount)} recorded`
+    );
+  } catch (err) {
+    console.error(err);
+    alert("Failed to record payment");
+  } finally {
+    setSaving(false);
   }
-  
-  setSaving(false);
 }
 
   return (

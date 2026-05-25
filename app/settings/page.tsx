@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import Header from "@/components/ui/Header";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-
+import Link from "next/link";
+import { Settings2 } from "lucide-react";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -82,12 +83,39 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-2xl space-y-3 p-4">
 
         {/* TITLE */}
-        <div className="mb-2">
-          <div className="text-lg font-semibold text-gray-900">Settings</div>
-          <div className="text-sm text-gray-500">
-            Manage your company and defaults
-          </div>
-        </div>
+{/* TITLE */}
+<div className="mb-2">
+  <div className="text-lg font-semibold text-gray-900">Settings</div>
+  <div className="text-sm text-gray-500">
+    Manage your company and defaults
+  </div>
+</div>
+
+{/* EXTERNAL SETTINGS */}
+<Link
+  href="/estimates/completed"
+  target="_blank"
+  className="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:shadow-md"
+>
+  <div className="flex items-center gap-3">
+    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-gray-700 group-hover:bg-gray-900 group-hover:text-white transition">
+      <Settings2 size={18} />
+    </div>
+
+    <div>
+      <div className="text-sm font-semibold text-gray-900">
+        Completed Estimates
+      </div>
+      <div className="text-xs text-gray-500">
+        Open external settings dashboard
+      </div>
+    </div>
+  </div>
+
+  <div className="text-xs font-medium text-gray-400 group-hover:text-gray-700 transition">
+    Open →
+  </div>
+</Link>
 
         {/* COMPANY */}
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
