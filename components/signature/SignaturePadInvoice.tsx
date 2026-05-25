@@ -245,14 +245,14 @@ export default function SignaturePadInvoice({
             </div>
           )}
 
-          {showRemoveButton && onRemove && (
+          {/* {showRemoveButton && onRemove && (
             <button
               onClick={() => setShowRemoveConfirm(true)}
               className="mt-3 text-xs text-red-500 hover:text-red-700 transition"
             >
               Remove Signature
             </button>
-          )}
+          )} */}
         </div>
       ) : (
         <>
