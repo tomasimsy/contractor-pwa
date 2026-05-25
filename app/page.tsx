@@ -134,11 +134,9 @@ const heroBgRef = useRef<HTMLDivElement | null>(null);
       <main className="min-h-screen" style={{ backgroundColor: NAVY, color: "#f9fafb" }}>
         <Hero />
         <Services />
-        <Testimonials />
         <BehindTheScene />
-
+        <Testimonials />
         <Footer />
-
       </main>
       );
       }
