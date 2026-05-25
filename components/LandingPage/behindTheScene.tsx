@@ -3,29 +3,25 @@
 export default function WorkProcessSection() {
    
 const steps = [
-  {
+{
   title: "Surface Preparation",
-  desc: "Wall/floor repair, sanding, priming, and prep before transformation begins.",
-  image:
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1600&auto=format&fit=crop",
+  desc: "Wall repair, sanding, priming, and prep before transformation begins.",
+  image: "/landingPageImages/drywall.jpg",
 },
   {
     title: "Floor Restoration",
     desc: "Hardwood sanding, polishing, tile replacement, and leveling.",
-    image:
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?q=80&w=1600&auto=format&fit=crop",
+     image: "/landingPageImages/floor.png",
   },
   {
     title: "Cabinet Construction",
     desc: "Custom cabinetry build out, framing, installation, and finishing paint.",
-    image:
-      "https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?q=80&w=1600&auto=format&fit=crop",
+     image: "/landingPageImages/cabinet.png",
   },
   {
     title: "Commercial / Salon Renovation",
     desc: "Nail salons, spa floors, tile rework, lighting, and interior layout rebuild.",
-    image:
-      "https://images.unsplash.com/photo-1615873968403-89e068629265?q=80&w=1600&auto=format&fit=crop",
+     image: "/landingPageImages/salon.png",
   },
 ];
  
