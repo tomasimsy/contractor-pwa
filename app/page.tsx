@@ -20,7 +20,7 @@ const services = [
   {
     icon: Home,
     title: "Home Renovations",
-    desc: "Whole-home remodels, layout changes, and structural updates that modernize how you live.",
+    desc: "Whole home remodels, layout changes, and updates that modernize how you live.",
   },
   {
     icon: Hammer,
@@ -30,7 +30,7 @@ const services = [
   {
     icon: Building2,
     title: "Commercial Remodeling",
-    desc: "Existing business spaces remodeled to feel modern, functional, and on-brand.",
+    desc: "Existing business spaces remodeled to feel modern, functional, and on brand.",
   },
   {
     icon: PaintRoller,
@@ -45,7 +45,7 @@ const services = [
   {
     icon: Ruler,
     title: "General Remodeling",
-    desc: "From single rooms to full properties—if it can be remodeled, we can handle it.",
+    desc: "From single rooms to full properties, if it can be remodeled, we can handle it.",
   },
 ];
 
@@ -58,7 +58,7 @@ const projects = [
   {
     label: "Commercial",
     title: "Salon Remodel",
-    desc: "Existing space remodeled with new layout, finishes, lighting, and customer-ready details.",
+    desc: "Existing space remodeled with new layout, finishes, lighting, and customer ready details.",
   },
   {
     label: "Mixed Use",
@@ -125,15 +125,99 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: NAVY, color: "#f9fafb" }}>
-<div className="flex items-center gap-2 select-none" style={{ backgroundColor: "#080e1f"  }}>
-  <div className="font-extrabold text-lg flex items-center justify-center h-9 w-12 rounded-md"
-       style={{ backgroundColor: "#d4a048", color: "#0b1630", fontFamily: "Montserrat, sans-serif" }}>
-    OSR
-  </div>
-  <span className="font-semibold text-sm tracking-wide" style={{ color: "#f9fafb" }}>
-    Pros
-  </span>
-</div>
+<div
+
+        className="sticky top-0 z-50 border-b border-white/5 backdrop-blur-xl"
+
+        style={{ backgroundColor: "rgba(8,14,31,0.82)" }}
+
+      >
+
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+
+          <div className="flex items-center gap-3 select-none">
+
+            <div
+
+              className="flex h-10 w-12 items-center justify-center rounded-lg font-extrabold shadow-lg"
+
+              style={{
+
+                backgroundColor: GOLD,
+
+                color: NAVY,
+
+                fontFamily: "Montserrat, sans-serif",
+
+              }}
+
+            >
+
+              OSR
+
+            </div>
+
+            <div className="flex flex-col leading-none">
+
+              <span className="text-sm font-semibold tracking-wide text-white">
+
+                Pros
+
+              </span>
+
+              <span className="text-[10px] text-slate-400">
+
+                Remodeling & Renovation
+
+              </span>
+
+            </div>
+
+          </div>
+
+          <div className="hidden items-center gap-3 md:flex">
+
+            <a
+
+              href="tel:+17043034112"
+
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+
+            >
+
+              <Phone className="h-4 w-4" />
+
+              (704) 303-4112
+
+            </a>
+
+            <a
+
+              href={SMS_LINK}
+
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+
+              style={{
+
+                backgroundColor: GOLD,
+
+                boxShadow: "0 12px 30px rgba(212,160,72,0.25)",
+
+              }}
+
+            >
+
+              <MessageCircle className="h-4 w-4" />
+
+              Start Project
+
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
 
 
       {/* HERO */}
@@ -155,10 +239,10 @@ export default function LandingPage() {
               Full-Service Residential & Commercial Remodeling
             </div>
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
-              From concept to completion—remodeling spaces that are built to last.
+              From concept to completion remodeling spaces that are built to last.
             </h1>
             <p className="max-w-xl text-sm text-slate-200/90 sm:text-base">
-              We specialize in remodeling homes and business spaces—kitchens, bathrooms, interiors, exteriors, and
+              We specialize in remodeling homes and business spaces, kitchens, bathrooms, interiors, exteriors, and
               full-property renovations. One team, start to finish, with craftsmanship you can see and reliability
               you can feel.
             </p>
@@ -189,7 +273,7 @@ export default function LandingPage() {
                 Text About Your Project
               </a>
               <p className="text-xs text-slate-300">
-                Licensed • Insured • Residential & Commercial Remodeling
+                Experienced • Insured • Residential & Commercial Remodeling
               </p>
             </div>
           </div>
@@ -331,7 +415,7 @@ export default function LandingPage() {
               </h2>
               <p className="mt-2 max-w-xl text-sm text-slate-200/90">
                 Every remodel is planned with clear communication, detailed scheduling, and a focus on
-                long-term durability—so your space looks great and works even better.
+                long term durability, so your space looks great and works even better.
               </p>
             </div>
           </div>
