@@ -43,7 +43,7 @@ export default function BottomNav() {
     { name: "Estimates", href: "/estimates", icon: FileText, activeIcon: FileText },
     { name: "Invoices", href: "/invoices", icon: CreditCard, activeIcon: CreditCard },
     { name: "Clients", href: "/clients", icon: Users, activeIcon: Users },
-    { name: "Settings", href: "/settings", icon: Settings, activeIcon: Settings },
+    { name: "Manage", href: "/settings", icon: Settings, activeIcon: Settings },
   ];
 
   const isActive = (href: string) => {

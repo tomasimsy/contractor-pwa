@@ -44,7 +44,7 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h1 className="text-2xl font-bold text-navy">One Square Roof</h1>
+          <h1 className="text-2xl font-bold text-navy">OSR PRos</h1>
           <p className="text-gray-500 text-sm mt-1">Sign in to access your dashboard</p>
         </div>
 
@@ -87,14 +87,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gold text-navy font-semibold py-2 rounded-lg hover:bg-gold-dark transition disabled:opacity-50"
+            className="w-full text-navy font-semibold py-2 border-gray-400 border rounded-lg hover:bg-gray-800 hover:text-white transition disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
         {/* Sign Up Link */}
-        <p className="text-center text-sm text-gray-500 mt-6">
+        {/* <p className="text-center text-sm text-gray-500 mt-6">
           Don't have an account?{" "}
           <button
             onClick={() => router.push("/signup")}
@@ -102,7 +102,7 @@ export default function LoginPage() {
           >
             Sign up
           </button>
-        </p>
+        </p> */}
       </div>
     </div>
   );

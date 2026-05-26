@@ -41,7 +41,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#d4a048" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <title>OSRPros - Sign Your Estimate</title>
+        <title>OSRPros-Remodel & Renovate</title>
         <meta name="description" content="Review and sign your roofing estimate online" />
         <meta property="og:title" content="One Square Roof - Sign Your Estimate" />
         <meta property="og:description" content="Please review and sign your estimate" />
