@@ -474,10 +474,10 @@ const finalDate = estimate.final_signed_at ? formatDate(estimate.final_signed_at
           <div class="page">
             <div class="header">
               <div class="company-section">
-                <div class="company-name">One Square Roofing LLC</div>
+                <div class="company-name">OSR Pros</div>
                 <div class="company-tagline"> Insured</div>
                 <div class="company-details">
-                  123 Business Street<br>
+                  5428 Johnston Mill Ct<br>
                   Charlotte, NC 28202<br>
                   Phone: (704) 303-4112<br>
                   Email: onesquareroof@gmail.com
@@ -591,7 +591,7 @@ const finalDate = estimate.final_signed_at ? formatDate(estimate.final_signed_at
               <div class="acknowledgment-title"> DEPOSIT PAID ACKNOWLEDGMENT</div>
               <div class="acknowledgment-text">
                 We, the undersigned, confirm that the deposit amount of ${formatCurrency(depositAmount)} has been paid 
-                and received by One Square Roofing LLC. This deposit secures the commencement of work as outlined in this estimate.
+                and received by OSR Pros. This deposit secures the commencement of work as outlined in this estimate.
               </div>
               <div class="signature-field">
                 <span class="signature-field-label">Clientx / Owner Signature:</span>
@@ -641,7 +641,7 @@ const finalDate = estimate.final_signed_at ? formatDate(estimate.final_signed_at
             </div>
 
             <div class="footer">
-              <p>One Square Roof LLC • (704) 303-4112 • onesquareroof@gmail.com</p>
+              <p>One Square Roofing LLC DBA OSR Pros • (704) 303-4112 • onesquareroof@gmail.com</p>
               <p>Thank you for your business!</p>
               <p>Page ${projects.length + 3} of ${projects.length + 3}</p>
             </div>

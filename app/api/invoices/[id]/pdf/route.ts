@@ -507,7 +507,7 @@ export async function GET(
           <div class="page">
             <div class="header">
               <div>
-                <div class="company-name">One Square Roofing LLC</div>
+                <div class="company-name">OSR Pros</div>
                 <div class="company-details">Charlotte, North Carolina</div>
                 <div class="company-details">Phone: (704) 303-4112</div>
                 <div class="company-details">Email: onesquareroof@gmail.com</div>
@@ -691,7 +691,7 @@ export async function GET(
             </div>
 
             <div class="footer">
-              <p>Thank you for your business! • One Square Roofing LLC • (704) 303-4112</p>
+              <p>Thank you for your business! • One Square Roofing DBA OSR Pros • (704) 303-4112</p>
               <p>Page ${projects.length + 2} of ${projects.length + 2}</p>
             </div>
           </div>

@@ -119,20 +119,56 @@ export default function PublicItemizedEstimatePage() {
     <div className="min-h-screen bg-gray-100 pb-10">
       {/* Header */}
       <div className="bg-green-700 text-white px-4 py-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-lg font-semibold">One Square Roof LLC</h1>
-          <p className="text-xs text-green-200 mt-0.5">Licensed & Insured</p>
-          <div className="flex justify-between items-end mt-3">
-            <div>
-              <div className="text-xs text-green-200">Estimate</div>
-              <div className="text-sm font-medium">#{estimate?.estimate_number || id?.slice(0, 8)}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-green-200">Status</div>
-              <div className="text-sm font-medium">{signed ? "✓ Signed" : "Pending"}</div>
-            </div>
-          </div>
-        </div>
+<div className="max-w-4xl mx-auto">
+
+  {/* BRAND */}
+  <h1 className="text-lg font-semibold flex items-center gap-1">
+    <span className="bg-orange-500 text-white px-2 py-0.5 rounded-md font-bold tracking-wide shadow-sm">
+      OSR
+    </span>
+
+    <span className="text-white ml-1">
+      Pros
+    </span>
+  </h1>
+
+  {/* TAGLINE */}
+  <p className="text-xs text-orange-200/90 mt-0.5 tracking-wide">
+    Experienced • Insured • Built to Last
+  </p>
+
+  {/* INFO ROW */}
+  <div className="flex justify-between items-end mt-3">
+
+    {/* ESTIMATE */}
+    <div>
+      <div className="text-[11px] text-orange-200/80">
+        Estimate
+      </div>
+
+      <div className="text-sm font-medium text-white">
+        #{estimate?.estimate_number || id?.slice(0, 8)}
+      </div>
+    </div>
+
+    {/* STATUS */}
+    <div className="text-right">
+      <div className="text-[11px] text-orange-200/80">
+        Status
+      </div>
+
+      <div
+        className={`text-sm font-medium ${
+          signed ? "text-green-400" : "text-orange-300"
+        }`}
+      >
+        {signed ? "✓ Signed" : "Pending"}
+      </div>
+    </div>
+
+  </div>
+
+</div>
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-5">
