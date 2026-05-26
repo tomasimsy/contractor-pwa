@@ -65,7 +65,7 @@ export default function TestimonialSection() {
 
       {/* Slider */}
       <div
-        className="mt-16 overflow-hidden"
+        className="mt-16 overflow-hidden px-10"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >

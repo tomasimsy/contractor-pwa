@@ -51,10 +51,12 @@ export default function RootLayout({
         <meta name="twitter:title" content="One Square Roof - Sign Your Estimate" />
         <meta name="twitter:description" content="Please review and sign your estimate" />
       </head>
-      <body className={`${inter.className} bg-gray-200 flex justify-center`}>
-<div className="w-full max-w-[430px] md:max-w-[768px] lg:max-w-[1100px] min-h-screen bg-gray-50 shadow-xl relative">
-  {children}
-  {showBottomNav && <BottomNav />}
+      <body className={`${inter.className} bg-primary flex justify-center`}>
+<div className="w-full min-h-screen bg-gray-90 relative flex justify-center">
+  <div className="w-full max-w-screen-2xl min-h-screen shadow-xl relative">
+    {children}
+    {showBottomNav && <BottomNav />}
+  </div>
 </div>
       </body>
     </html>

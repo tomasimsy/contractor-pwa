@@ -1,40 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
 export default function HeroSection() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const bgOffset = scrollY * 0.003;
-  const textOffset = scrollY * 0.0015;
-  const opacity = Math.max(1 - scrollY / 900, 0);
 
   return (
     <section className="relative h-screen w-full overflow-hidden bg-black text-white">
 
       {/* BACKGROUND */}
       <div
-        className="absolute inset-0 bg-cover bg-center scale-110"
+        className="absolute inset-0 bg-cover  "
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?q=80&w=1600&auto=format&fit=crop')",
-          transform: `translate3d(0, ${bgOffset}px, 0) scale(1.1)`,
+            "url('/LandingPageImages/kitchen.jpg')",
         }}
       />
 
       {/* OVERLAY */}
-      <div
-        className="absolute inset-0 bg-black/50 transition-opacity"
-        style={{ opacity }}
-      />
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* NAVBAR */}
       <nav className="absolute top-0 left-0 z-50 w-full">
@@ -75,26 +60,14 @@ export default function HeroSection() {
           {/* MOBILE */}
           <div className="flex flex-col gap-5 md:hidden">
 
-            <h1
-              className="font-semibold leading-none tracking-tight"
-              style={{
-                transform: `translateY(${textOffset}px)`,
-                opacity,
-              }}
-            >
+            <h1 className="font-semibold leading-none tracking-tight">
               <span className="inline-block rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-1 text-5xl text-white shadow-lg">
                 OSR
               </span>{" "}
               <span className="text-5xl text-white">Pros</span>
             </h1>
 
-            <div
-              className="space-y-3 max-w-xl"
-              style={{
-                transform: `translateY(${textOffset}px)`,
-                opacity,
-              }}
-            >
+            <div className="space-y-3 max-w-xl">
               <p className="text-base text-white/85 leading-relaxed">
                 We transform homes and businesses with high-end remodeling,
                 precision craftsmanship, and modern design.
@@ -113,13 +86,6 @@ export default function HeroSection() {
                 >
                   Get Free Estimate
                 </a>
-
-                {/* <a
-                  href="#services"
-                  className="text-center text-sm text-white/70 underline underline-offset-4"
-                >
-                  View Services
-                </a> */}
               </div>
             </div>
           </div>
@@ -127,26 +93,14 @@ export default function HeroSection() {
           {/* DESKTOP */}
           <div className="hidden items-end justify-between gap-12 md:flex">
 
-            <h1
-              className="text-7xl lg:text-8xl font-semibold leading-none tracking-tight"
-              style={{
-                transform: `translateY(${textOffset}px)`,
-                opacity,
-              }}
-            >
+            <h1 className="text-7xl lg:text-8xl font-semibold leading-none tracking-tight">
               <span className="inline-block rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-2 text-white shadow-[0_0_25px_rgba(249,115,22,0.35)]">
                 OSR
               </span>{" "}
               <span className="text-white">Pros</span>
             </h1>
 
-            <div
-              className="max-w-xl space-y-4 pb-2"
-              style={{
-                transform: `translateY(${textOffset}px)`,
-                opacity,
-              }}
-            >
+            <div className="max-w-xl space-y-4 pb-2">
               <p className="text-lg text-white/85 leading-relaxed">
                 We transform homes and businesses with high-end remodeling,
                 precision craftsmanship, and modern design.
@@ -165,13 +119,6 @@ export default function HeroSection() {
                 >
                   Get Free Estimate
                 </a>
-
-                {/* <a
-                  href="#services"
-                  className="text-sm text-white/70 underline underline-offset-4 hover:text-white"
-                >
-                  Explore Work
-                </a> */}
               </div>
 
             </div>
