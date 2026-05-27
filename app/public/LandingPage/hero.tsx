@@ -55,7 +55,7 @@ export default function HeroSection() {
 
       {/* HERO CONTENT */}
       <div className="relative z-10 flex h-full items-end">
-        <div className="w-full px-6 pb-10 md:px-10 md:pb-14">
+        <div className="w-full px-6 pb-40 md:px-10 md:pb-44">
 
           {/* MOBILE */}
           <div className="flex flex-col gap-5 md:hidden">
