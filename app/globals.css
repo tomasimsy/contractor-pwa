@@ -129,6 +129,11 @@
   }
 }
 
+body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 /* Prevent text selection while dragging */
 .cursor-ew-resize {
   cursor: ew-resize;
