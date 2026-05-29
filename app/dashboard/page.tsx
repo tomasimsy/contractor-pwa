@@ -145,6 +145,30 @@ export default function Dashboard() {
         </div>
 
         <div className="mx-auto max-w-4xl space-y-4 p-4">
+          {/* QUICK ACTIONS */}
+<div className="hidden md:grid grid-cols-2 gap-2">
+  <Link href="/estimates/create">
+    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-emerald-200 hover:border-emerald-200 active:translate-y-0">
+      <div className="text-xs font-semibold text-emerald-900">
+        New Estimate
+      </div>
+      <div className="mt-0.5 text-[10px] text-emerald-700 leading-tight">
+        Create estimate
+      </div>
+    </div>
+  </Link>
+
+  <Link href="/invoices">
+    <div className="rounded-xl border border-blue-100 bg-blue-50 p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-blue-200 hover:border-blue-200 active:translate-y-0">
+      <div className="text-xs font-semibold text-blue-900">
+        View Invoices
+      </div>
+      <div className="mt-0.5 text-[10px] text-blue-700 leading-tight">
+        Track payments
+      </div>
+    </div>
+  </Link>
+</div>
           {/* Financial dashboard */}
           <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
             <div className="max-w-4xl mx-auto">

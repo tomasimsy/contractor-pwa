@@ -11,7 +11,7 @@ import SignaturePad from "@/components/signature/SignaturePad";
 import ProjectFinancialsModal from "@/components/ProjectFinancialsModal";
 import ExpenseModal from "@/components/ExpenseModal";
 import Link from "next/link";
-import { SquarePen, Send, FileText, Users, Receipt, DollarSign } from "lucide-react";
+import { SquarePen, Send, FileText, Users, Receipt, DollarSign , Plus} from "lucide-react";
 
 type ProjectWithItems = {
   id: string;
@@ -837,106 +837,97 @@ export default function EstimatePage() {
       </div>
 
       {/* FAB */}
-      {!isEditMode && (
-        <div
-          ref={fabRef}
-          className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none"
+{!isEditMode && (
+  <div
+    ref={fabRef}
+    className="fixed bottom-15 right-6 z-50 flex flex-col items-end gap-3"
+    onMouseEnter={() => setFabOpen(true)}
+    onMouseLeave={() => setFabOpen(false)}
+  >
+    {/* FAB Menu */}
+    <div
+      className={`flex flex-col items-end gap-2 transition-all duration-300 transform origin-bottom ${
+        fabOpen
+          ? "scale-100 opacity-100 translate-y-0"
+          : "scale-75 opacity-0 translate-y-4 pointer-events-none"
+      }`}
+    >
+      {/* Edit */}
+      {!estimate?.signature && (
+        <button
+          onClick={() => {
+            setIsEditMode(true);
+            setFabOpen(false);
+          }}
+          className="flex items-center gap-2 rounded-xl bg-white text-gray-700 font-medium px-3 py-2 text-sm shadow-lg border border-gray-100 hover:bg-gray-50 hover:text-green-600 transition-all active:scale-95"
         >
-          {/* FAB Menu */}
-          <div
-            className={`flex flex-col items-end gap-2 origin-bottom-right transition-all duration-200 ${
-              fabOpen
-                ? "opacity-100 translate-y-0 scale-100"
-                : "opacity-0 translate-y-3 scale-95"
-            }`}
-          >
-            {/* Edit */}
-            {!estimate?.signature && (
-              <button
-                onClick={() => {
-                  setIsEditMode(true);
-                  setFabOpen(false);
-                }}
-                className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
-                  fabOpen ? "" : "pointer-events-none"
-                }`}
-              >
-                <SquarePen size={14} />
-                Edit
-              </button>
-            )}
-
-            {/* Financials */}
-            <button
-              onClick={() => {
-                setShowFinancialsModal(true);
-                setFabOpen(false);
-              }}
-              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
-                fabOpen ? "" : "pointer-events-none"
-              }`}
-            >
-              <DollarSign size={14} />
-              Financials
-            </button>
-
-            {/* Expenses */}
-            <button
-              onClick={() => {
-                setShowExpenseModal(true);
-                setFabOpen(false);
-              }}
-              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
-                fabOpen ? "" : "pointer-events-none"
-              }`}
-            >
-              <Receipt size={14} />
-              Expenses
-            </button>
-
-            {/* SMS */}
-            <button
-              onClick={() => {
-                sendSMSLink();
-                setFabOpen(false);
-              }}
-              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
-                fabOpen ? "" : "pointer-events-none"
-              }`}
-            >
-              <Send size={14} />
-              Send SMS
-            </button>
-
-            {/* PDF */}
-            <Link
-              href={`/api/estimates/${id}/pdf`}
-              target="_blank"
-              onClick={() => setFabOpen(false)}
-              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-green-100 px-3 py-2 text-sm shadow-lg border border-green-600 hover:bg-gray-50 active:scale-95 transition-all ${
-                fabOpen ? "" : "pointer-events-none"
-              }`}
-            >
-              <FileText size={14} />
-              PDF
-            </Link>
-          </div>
-
-          {/* Main FAB */}
-          <button
-            onClick={() => setFabOpen(!fabOpen)}
-            className="pointer-events-auto h-14 w-14 rounded-full bg-green-700 text-white shadow-xl hover:bg-green-800 transition-all duration-200 flex items-center justify-center active:scale-95"
-          >
-            <span
-              className={`text-2xl font-bold transition-transform duration-300 ${
-                fabOpen ? "rotate-45" : "rotate-0"
-              }`}
-            >
-              +
-            </span>
-          </button>
-        </div>
+          <SquarePen size={16} />
+          <span>Edit</span>
+        </button>
       )}
+
+      {/* Financials */}
+      <button
+        onClick={() => {
+          setShowFinancialsModal(true);
+          setFabOpen(false);
+        }}
+        className="flex items-center gap-2 rounded-xl bg-white text-gray-700 font-medium px-3 py-2 text-sm shadow-lg border border-gray-100 hover:bg-gray-50 hover:text-green-600 transition-all active:scale-95"
+      >
+        <DollarSign size={16} />
+        <span>Financials</span>
+      </button>
+
+      {/* Expenses */}
+      <button
+        onClick={() => {
+          setShowExpenseModal(true);
+          setFabOpen(false);
+        }}
+        className="flex items-center gap-2 rounded-xl bg-white text-gray-700 font-medium px-3 py-2 text-sm shadow-lg border border-gray-100 hover:bg-gray-50 hover:text-green-600 transition-all active:scale-95"
+      >
+        <Receipt size={16} />
+        <span>Expenses</span>
+      </button>
+
+      {/* SMS */}
+      <button
+        onClick={() => {
+          sendSMSLink();
+          setFabOpen(false);
+        }}
+        className="flex items-center gap-2 rounded-xl bg-white text-gray-700 font-medium px-3 py-2 text-sm shadow-lg border border-gray-100 hover:bg-gray-50 hover:text-green-600 transition-all active:scale-95"
+      >
+        <Send size={16} />
+        <span>Send SMS</span>
+      </button>
+
+      {/* PDF */}
+      <Link
+        href={`/api/estimates/${id}/pdf`}
+        target="_blank"
+        onClick={() => setFabOpen(false)}
+        className="flex items-center gap-2 rounded-xl bg-white text-gray-700 font-medium px-3 py-2 text-sm shadow-lg border border-gray-100 hover:bg-gray-50 hover:text-green-600 transition-all active:scale-95"
+      >
+        <FileText size={16} />
+        <span>View PDF</span>
+      </Link>
+    </div>
+
+    {/* Main FAB Trigger */}
+    <button
+      onClick={() => setFabOpen(!fabOpen)}
+      className="h-14 w-14 rounded-full bg-green-600 text-white shadow-xl hover:bg-green-700 transition-all duration-300 flex items-center justify-center active:scale-95"
+    >
+      <Plus
+        size={24}
+        className={`transition-transform duration-300 ${
+          fabOpen ? "rotate-45" : "rotate-0"
+        }`}
+      />
+    </button>
+  </div>
+)}
 
       <ProjectFinancialsModal
         isOpen={showFinancialsModal}

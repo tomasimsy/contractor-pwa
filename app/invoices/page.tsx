@@ -138,9 +138,9 @@ const getInvoiceStatusConfig = (invoice: any) => {
 
 
             {!loading && invoices.length > 0 && (
-              <div className="rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Total</div>
-                <div className="text-sm font-semibold text-gray-800">{invoices.length}</div>
+              <div className="rounded-xl border border-gray-200 bg-green-600 text-white px-3 py-2 shadow-sm">
+                <div className="text-[11px] uppercase tracking-wide  ">Total</div>
+                <div className="text-sm font-semibold  ">{invoices.length}</div>
               </div>
             )}
           </div>
