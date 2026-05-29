@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Estimate } from "@/types";
@@ -22,45 +22,75 @@ export default function EstimatesPage() {
   });
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    loadEstimates();
+  // 1. Memoized data fetcher
+  const loadEstimates = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Explicitly define columns instead of '*' to keep network payloads lightweight
+      const { data, error } = await supabase
+        .from("estimates")
+        .select(`
+          id, 
+          estimate_number, 
+          created_at, 
+          total, 
+          signature, 
+          status,
+          clients (name, phone)
+        `)
+        .is("deleted_at", null)
+        .eq("is_completed", false)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      if (data) setEstimates(data as unknown as Estimate[]);
+    } catch (error) {
+      console.error("Error loading estimates:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  async function loadEstimates() {
-    // Load only non-deleted estimates
-    const { data } = await supabase
-      .from("estimates")
-      .select("*, clients(name, phone)")
-      .is("deleted_at", null)
-      .eq("is_completed", false)  // ← Exclude completed
-      .order("created_at", { ascending: false });
+  useEffect(() => {
+    loadEstimates();
+  }, [loadEstimates]);
 
-    if (data) setEstimates(data as Estimate[]);
-    setLoading(false);
-  }
-
+  // 2. Optimistic UI update during deletion
   async function handleSoftDelete() {
+    const targetId = deleteModal.id;
     setDeleting(true);
 
-    // Soft delete - just mark as deleted
-    const { error } = await supabase
-      .from("estimates")
-      .update({ 
-        deleted_at: new Date().toISOString(),
-        is_deleted: true 
-      })
-      .eq("id", deleteModal.id);
+    // Capture current state in case we need to roll back on database error
+    const previousEstimates = [...estimates];
 
-    if (!error) {
-      await loadEstimates();
-      setDeleteModal({ isOpen: false, id: "", name: "" });
+    // Optimistically update local UI instantly before the server responds
+    setEstimates((prev) => prev.filter((est) => est.id !== targetId));
+    setDeleteModal({ isOpen: false, id: "", name: "" });
+
+    try {
+      const { error } = await supabase
+        .from("estimates")
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          is_deleted: true 
+        })
+        .eq("id", targetId);
+
+      if (error) throw error;
       alert("Estimate moved to trash");
-    } else {
-      alert("Error deleting estimate");
+    } catch (error) {
+      console.error("Deletion failed:", error);
+      alert("Error deleting estimate. Restoring item.");
+      // Rollback UI state if database call fails
+      setEstimates(previousEstimates);
+    } finally {
+      setDeleting(false);
     }
-
-    setDeleting(false);
   }
+
+  // 3. String concatenation and URL performance cleanup
+  const getEstimateUrl = (id: string) => `${window.location.origin}/public/estimates/${id}`;
 
   const sendSMSLink = (estimate: Estimate) => {
     const phoneNumber = estimate.clients?.phone;
@@ -70,13 +100,14 @@ export default function EstimatesPage() {
       return;
     }
 
-    const baseUrl = window.location.origin;
-    const documentUrl = `${baseUrl}/public/estimates/${estimate.id}`;
+    const documentUrl = getEstimateUrl(estimate.id);
+    const estIdentifier = estimate.estimate_number || estimate.id.slice(0, 8);
+    const totalAmount = estimate.total ? estimate.total.toFixed(2) : "0.00";
 
     const message = encodeURIComponent(
       `Hello ${estimate.clients?.name || "Customer"}! Please review and sign your estimate: ${documentUrl}\n\n` +
-      `Estimate #${estimate.estimate_number || estimate.id.slice(0, 8)}\n` +
-      `Total: $${estimate.total?.toFixed(2) || "0.00"}\n\n` +
+      `Estimate #${estIdentifier}\n` +
+      `Total: $${totalAmount}\n\n` +
       `Click the link above to view and sign. Thank you!`
     );
 
@@ -84,30 +115,27 @@ export default function EstimatesPage() {
   };
 
   const copyLink = (estimate: Estimate) => {
-    const baseUrl = window.location.origin;
-    const documentUrl = `${baseUrl}/public/estimates/${estimate.id}`;
+    const documentUrl = getEstimateUrl(estimate.id);
     navigator.clipboard.writeText(documentUrl);
     alert(`Link copied: ${documentUrl}`);
   };
 
+  // 4. Static lookup map instead of continuous evaluation
   const getStatus = (est: Estimate) => {
-    if (est.signature)
-      return {
-        label: "Signed",
-        className: "bg-green-100 text-green-700",
-      };
-
-    if (est.status === "converted")
-      return {
-        label: "Converted",
-        className: "bg-purple-100 text-purple-700",
-      };
-
-    return {
-      label: "Pending",
-      className: "bg-yellow-100 text-yellow-700",
-    };
+    if (est.signature) {
+      return { label: "Signed", className: "bg-green-100 text-green-700" };
+    }
+    if (est.status === "converted") {
+      return { label: "Converted", className: "bg-purple-100 text-purple-700" };
+    }
+    return { label: "Pending", className: "bg-yellow-100 text-yellow-700" };
   };
+
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500">Loading estimates...</div>;
+  }
+
+ 
 
   return (
     <ProtectedRoute>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -10,9 +10,20 @@ import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import FinancialDashboard from "@/components/FinancialDashboard";
 
+// Define strict types instead of any[]
+interface DashboardStats {
+  estimates: number;
+  signed: number;
+  converted: number;
+  invoices: number;
+  paid: number;
+  pending: number;
+}
+
 export default function Dashboard() {
   const router = useRouter();
-  const [stats, setStats] = useState({
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
     estimates: 0,
     signed: 0,
     converted: 0,
@@ -24,74 +35,86 @@ export default function Dashboard() {
   const [recentInvoices, setRecentInvoices] = useState<any[]>([]);
   const [overdueInvoices, setOverdueInvoices] = useState<any[]>([]);
 
+  // Memoize loadDashboard to prevent unnecessary recreation
+  const loadDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      const todayString = new Date().toISOString().split("T")[0];
+
+      // Fire all 5 requests simultaneously
+      const [
+        estimatesRes,
+        invoicesRes,
+        recentEstRes,
+        recentInvRes,
+        overdueRes
+      ] = await Promise.all([
+        supabase.from("estimates").select("signature, status"),
+        supabase.from("invoices").select("status, remaining_balance"),
+        supabase.from("estimates")
+          .select("id, created_at, total, estimate_number, clients(name), signature")
+          .order("created_at", { ascending: false })
+          .eq("is_completed", false)
+          .is("deleted_at", null)
+          .limit(5),
+        supabase.from("invoices")
+          .select("id, created_at, total, invoice_number, clients(name), status")
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase.from("invoices")
+          .select("id, invoice_number, total, remaining_balance, due_date, clients(name)")
+          .lt("due_date", todayString)
+          .neq("status", "paid")
+      ]);
+
+      // Process Stats locally in a single pass to minimize array iterations
+      const nextStats: DashboardStats = {
+        estimates: estimatesRes.data?.length || 0,
+        signed: 0,
+        converted: 0,
+        invoices: invoicesRes.data?.length || 0,
+        paid: 0,
+        pending: 0,
+      };
+
+      estimatesRes.data?.forEach((e) => {
+        if (e.signature) nextStats.signed++;
+        if (e.status === "converted") nextStats.converted++;
+      });
+
+      invoicesRes.data?.forEach((i) => {
+        if (i.status === "paid") nextStats.paid++;
+        else if ((i.remaining_balance || 0) > 0) nextStats.pending++;
+      });
+
+      // Batch state updates together to minimize re-renders
+      setStats(nextStats);
+      if (recentEstRes.data) setRecentEstimates(recentEstRes.data);
+      if (recentInvRes.data) setRecentInvoices(recentInvRes.data);
+      if (overdueRes.data) setOverdueInvoices(overdueRes.data);
+
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadDashboard();
-  }, []);
+  }, [loadDashboard]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
   };
 
-  async function loadDashboard() {
-    // Load estimates stats
-    const { data: estimates } = await supabase
-      .from("estimates")
-      .select("id, signature, status");
-
-    if (estimates) {
-      setStats((prev) => ({
-        ...prev,
-        estimates: estimates.length,
-        signed: estimates.filter((e) => e.signature).length,
-        converted: estimates.filter((e) => e.status === "converted").length,
-      }));
-    }
-
-    // Load invoices stats
-    const { data: invoices } = await supabase
-      .from("invoices")
-      .select("id, status, remaining_balance");
-
-    if (invoices) {
-      setStats((prev) => ({
-        ...prev,
-        invoices: invoices.length,
-        paid: invoices.filter((i) => i.status === "paid").length,
-        pending: invoices.filter(
-          (i) => i.status !== "paid" && (i.remaining_balance || 0) > 0,
-        ).length,
-      }));
-    }
-
-    // Load recent estimates
-    const { data: recentEst } = await supabase
-      .from("estimates")
-      .select("id, created_at, total, estimate_number, clients(name), signature")
-      .order("created_at", { ascending: false })
-      .eq("is_completed", false)
-      .is("deleted_at", null)
-      .limit(5);
-    if (recentEst) setRecentEstimates(recentEst);
-
-    // Load recent invoices
-    const { data: recentInv } = await supabase
-      .from("invoices")
-      .select("id, created_at, total, invoice_number, clients(name), status")
-      .order("created_at", { ascending: false })
-      .limit(5);
-    if (recentInv) setRecentInvoices(recentInv);
-
-    // Load overdue invoices
-    const { data: overdue } = await supabase
-      .from("invoices")
-      .select(
-        "id, invoice_number, total, remaining_balance, due_date, clients(name)",
-      )
-      .lt("due_date", new Date().toISOString().split("T")[0])
-      .neq("status", "paid");
-    if (overdue) setOverdueInvoices(overdue);
+  // Optional: Render loading state if needed
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500">Loading dashboard...</div>;
   }
+
+ 
 
   return (
     <ProtectedRoute>

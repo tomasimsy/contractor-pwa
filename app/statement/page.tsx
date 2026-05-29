@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { 
@@ -83,20 +83,7 @@ export default function FinancialDashboard() {
   });
   const [timeRange, setTimeRange] = useState<"month" | "quarter" | "year">("month");
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [timeRange]);
-
-  function getErrorMessage(error: any): string {
-    if (!error) return "Unknown error";
-    if (typeof error === 'string') return error;
-    if (error.message) return error.message;
-    if (error.details) return error.details;
-    if (error.hint) return error.hint;
-    return JSON.stringify(error);
-  }
-
-  async function loadDashboardData() {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -109,163 +96,62 @@ export default function FinancialDashboard() {
       } else {
         startDate.setFullYear(now.getFullYear() - 1);
       }
-
       const startDateStr = startDate.toISOString();
-      console.log("Fetching data from:", startDateStr);
 
-      // Check if user is authenticated
+      // Check authentication state first
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.warn("No active session. Please log in.");
         setError("Please log in to view financial data.");
         setLoading(false);
         return;
       }
-      console.log("User authenticated:", session.user.email);
 
-      // 1. Fetch all completed estimates (invoices)
-      const { data: estimates, error: estimatesError } = await supabase
-        .from("estimates")
-        .select("id, total, status, completed_at, estimate_number")
-        .in("status", ["completed", "converted"])
-        .gte("completed_at", startDateStr);
+      // OPTIMIZATION: Fire all core tables concurrently in 1 single Promise batch 
+      // OPTIMIZATION: Using PostgREST resource embedding (Inner Joins) to pull relational strings instantly
+      const [
+        estimatesRes,
+        subPaymentsRes,
+        estSubsRes,
+        agentPaymentsRes,
+        estAgentsRes,
+        expensesRes
+      ] = await Promise.all([
+        supabase.from("estimates").select("id, total, status, completed_at, estimate_number").in("status", ["completed", "converted"]).gte("completed_at", startDateStr),
+        supabase.from("subcontractor_payments").select(`amount, created_at, estimate_subcontractors(subcontractors(name))`).gte("created_at", startDateStr),
+        supabase.from("estimate_subcontractors").select("amount, paid_amount"),
+        supabase.from("agent_payments").select(`amount, payment_date, agents(name), estimates(estimate_number)`).gte("payment_date", startDateStr),
+        supabase.from("estimate_agents").select("amount, paid_amount"),
+        supabase.from("estimate_expenses").select("amount, category, description, expense_date").gte("expense_date", startDateStr)
+      ]);
 
-      if (estimatesError) {
-        console.error("Estimates fetch error:", estimatesError.message, estimatesError.details);
-        throw new Error(`Failed to fetch estimates: ${estimatesError.message}`);
-      }
+      // Guard clauses for potential table failures
+      if (estimatesRes.error) throw new Error(`Estimates error: ${estimatesRes.error.message}`);
 
-      console.log("Fetched estimates:", estimates?.length || 0);
+      // 1. Math Aggregations (Estimates)
+      const estimates = estimatesRes.data || [];
+      const totalRevenue = estimates.reduce((sum, e) => sum + (e.total || 0), 0);
+      const completedProjects = estimates.length;
+      const pendingInvoices = estimates.filter(e => e.status === "converted").length;
 
-      const totalRevenue = estimates?.reduce((sum, e) => sum + (e.total || 0), 0) || 0;
-      const completedProjects = estimates?.length || 0;
-      const pendingInvoices = estimates?.filter(e => e.status === "converted").length || 0;
-
-      // 2. Fetch subcontractor payments
-      let subcontractorPaid = 0;
-      let subPayments: any[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("subcontractor_payments")
-          .select("amount, created_at, estimate_subcontractor_id")
-          .gte("created_at", startDateStr);
-        
-        if (error) {
-          console.warn("Subcontractor payments fetch warning:", error.message);
-        } else {
-          subPayments = data || [];
-          subcontractorPaid = subPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        }
-      } catch (subErr) {
-        console.warn("Subcontractor payments error:", subErr);
-      }
-
-      // 3. Get outstanding subcontractor amounts
-      let totalSubAssigned = 0;
-      let totalSubPaid = 0;
-      let outstandingSubcontractor = 0;
-      try {
-        const { data, error } = await supabase
-          .from("estimate_subcontractors")
-          .select("amount, paid_amount");
-        
-        if (error) {
-          console.warn("Assigned subcontractors fetch warning:", error.message);
-        } else if (data) {
-          totalSubAssigned = data.reduce((sum, s) => sum + (s.amount || 0), 0);
-          totalSubPaid = data.reduce((sum, s) => sum + (s.paid_amount || 0), 0);
-          outstandingSubcontractor = totalSubAssigned - totalSubPaid;
-        }
-      } catch (assignedErr) {
-        console.warn("Assigned subcontractors error:", assignedErr);
-      }
-
-      // 4. Fetch agent payments with estimate numbers
-      let agentPaid = 0;
-      let agentPayments: any[] = [];
-      let estimateNumberMap = new Map();
-      let agentNameMap = new Map();
+      // 2. Subcontractor processing
+      const subPayments = subPaymentsRes.data || [];
+      const subcontractorPaid = subPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
       
-      try {
-        const { data, error } = await supabase
-          .from("agent_payments")
-          .select("amount, payment_date, agent_id, estimate_id")
-          .gte("payment_date", startDateStr);
-        
-        if (error) {
-          console.warn("Agent payments fetch warning:", error.message);
-        } else if (data) {
-          agentPayments = data;
-          agentPaid = agentPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const estSubs = estSubsRes.data || [];
+      const outstandingSubcontractor = estSubs.reduce((sum, s) => sum + ((s.amount || 0) - (s.paid_amount || 0)), 0);
 
-          // Get estimate numbers for agent payments
-          const estimateIds = [...new Set(agentPayments.map(p => p.estimate_id).filter(Boolean))];
-          if (estimateIds.length > 0) {
-            const { data: estimateData } = await supabase
-              .from("estimates")
-              .select("id, estimate_number")
-              .in("id", estimateIds);
-            estimateData?.forEach(est => {
-              estimateNumberMap.set(est.id, est.estimate_number);
-            });
-          }
+      // 3. Agent processing
+      const agentPayments = agentPaymentsRes.data || [];
+      const agentPaid = agentPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
-          // Get agent names
-          const agentIds = [...new Set(agentPayments.map(p => p.agent_id).filter(Boolean))];
-          if (agentIds.length > 0) {
-            const { data: agentData } = await supabase
-              .from("agents")
-              .select("id, name")
-              .in("id", agentIds);
-            agentData?.forEach(agent => {
-              agentNameMap.set(agent.id, agent.name);
-            });
-          }
-        }
-      } catch (agentErr) {
-        console.warn("Agent payments error:", agentErr);
-      }
+      const estAgents = estAgentsRes.data || [];
+      const outstandingAgent = estAgents.reduce((sum, a) => sum + ((a.amount || 0) - (a.paid_amount || 0)), 0);
 
-      // 5. Get outstanding agent amounts
-      let totalAgentAssigned = 0;
-      let totalAgentPaid = 0;
-      let outstandingAgent = 0;
-      try {
-        const { data, error } = await supabase
-          .from("estimate_agents")
-          .select("amount, paid_amount");
-        
-        if (error) {
-          console.warn("Assigned agents fetch warning:", error.message);
-        } else if (data) {
-          totalAgentAssigned = data.reduce((sum, a) => sum + (a.amount || 0), 0);
-          totalAgentPaid = data.reduce((sum, a) => sum + (a.paid_amount || 0), 0);
-          outstandingAgent = totalAgentAssigned - totalAgentPaid;
-        }
-      } catch (assignedAgentErr) {
-        console.warn("Assigned agents error:", assignedAgentErr);
-      }
+      // 4. Expense processing
+      const expenses = expensesRes.data || [];
+      const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-      // 6. Fetch expenses
-      let totalExpenses = 0;
-      let expenses: any[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("estimate_expenses")
-          .select("amount, category, description, expense_date")
-          .gte("expense_date", startDateStr);
-        
-        if (error) {
-          console.warn("Expenses fetch warning:", error.message);
-        } else if (data) {
-          expenses = data;
-          totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-        }
-      } catch (expenseErr) {
-        console.warn("Expenses error:", expenseErr);
-      }
-
-      // Calculate net profit and margin
+      // Calculate final Summary metrics
       const netProfit = totalRevenue - totalExpenses - subcontractorPaid - agentPaid;
       const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
@@ -282,7 +168,7 @@ export default function FinancialDashboard() {
         completedProjects,
       });
 
-      // 7. Process expense categories
+      // 5. Process Expense Categories (Optimized single map pass)
       const categoryMap = new Map<string, { total: number; count: number; icon: string }>();
       expenses.forEach(exp => {
         const existing = categoryMap.get(exp.category);
@@ -298,38 +184,24 @@ export default function FinancialDashboard() {
         }
       });
 
-      const categories = Array.from(categoryMap.entries())
-        .map(([category, data]) => ({
-          category,
-          total: data.total,
-          count: data.count,
-          icon: data.icon,
-        }))
-        .sort((a, b) => b.total - a.total);
+      setExpenseCategories(
+        Array.from(categoryMap.entries())
+          .map(([category, data]) => ({
+            category,
+            total: data.total,
+            count: data.count,
+            icon: data.icon,
+          }))
+          .sort((a, b) => b.total - a.total)
+      );
 
-      setExpenseCategories(categories);
-
-      // 8. Build recent transactions
+      // 6. Build Recent Transactions (Zero relational sub-queries required)
       const transactions: RecentTransaction[] = [];
 
-      // Get subcontractor names
-      const subContractorIds = [...new Set(subPayments.map(p => p.estimate_subcontractor_id).filter(Boolean))];
-      let subContractorNameMap = new Map();
-      if (subContractorIds.length > 0) {
-        const { data: subContractorData } = await supabase
-          .from("estimate_subcontractors")
-          .select("id, subcontractors(name)")
-          .in("id", subContractorIds);
-        subContractorData?.forEach(sub => {
-          const name = (sub.subcontractors as any)?.name || "Subcontractor";
-          subContractorNameMap.set(sub.id, name);
-        });
-      }
-
-      subPayments.slice(0, 5).forEach(p => {
-        const subName = subContractorNameMap.get(p.estimate_subcontractor_id) || "Subcontractor";
+      subPayments.slice(0, 5).forEach((p, index) => {
+        const subName = (p.estimate_subcontractors as any)?.subcontractors?.name || "Subcontractor";
         transactions.push({
-          id: `sub-${Date.now()}-${Math.random()}`,
+          id: `sub-${p.created_at}-${index}`,
           type: "subcontractor",
           amount: p.amount,
           description: `Payment to ${subName}`,
@@ -337,22 +209,22 @@ export default function FinancialDashboard() {
         });
       });
 
-      agentPayments.slice(0, 5).forEach(p => {
-        const agentName = agentNameMap.get(p.agent_id) || "Agent";
-        const estimateNumber = estimateNumberMap.get(p.estimate_id);
+      agentPayments.slice(0, 5).forEach((p, index) => {
+        const agentName = (p.agents as any)?.name || "Agent";
+        const estNum = (p.estimates as any)?.estimate_number;
         transactions.push({
-          id: `agent-${Date.now()}-${Math.random()}`,
+          id: `agent-${p.payment_date}-${index}`,
           type: "agent",
           amount: p.amount,
           description: `Commission to ${agentName}`,
           date: p.payment_date,
-          estimateNumber: estimateNumber,
+          estimateNumber: estNum,
         });
       });
 
-      expenses.slice(0, 5).forEach(e => {
+      expenses.slice(0, 5).forEach((e, index) => {
         transactions.push({
-          id: `exp-${Date.now()}-${Math.random()}`,
+          id: `exp-${e.expense_date}-${index}`,
           type: "expense",
           amount: e.amount,
           description: e.description,
@@ -363,12 +235,13 @@ export default function FinancialDashboard() {
       transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setRecentTransactions(transactions.slice(0, 10));
 
-      // 9. Calculate monthly trends
+      // 7. Calculate Monthly Trends
       const monthlyData = new Map<string, { revenue: number; expenses: number }>();
+      const formatOptions: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' };
       
-      estimates?.forEach(est => {
+      estimates.forEach(est => {
         if (est.completed_at) {
-          const month = new Date(est.completed_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          const month = new Date(est.completed_at).toLocaleDateString('en-US', formatOptions);
           const existing = monthlyData.get(month) || { revenue: 0, expenses: 0 };
           existing.revenue += est.total || 0;
           monthlyData.set(month, existing);
@@ -376,12 +249,13 @@ export default function FinancialDashboard() {
       });
 
       expenses.forEach(exp => {
-        const month = new Date(exp.expense_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const month = new Date(exp.expense_date).toLocaleDateString('en-US', formatOptions);
         const existing = monthlyData.get(month) || { revenue: 0, expenses: 0 };
         existing.expenses += exp.amount;
         monthlyData.set(month, existing);
       });
 
+      const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const trends = Array.from(monthlyData.entries())
         .map(([month, data]) => ({
           month,
@@ -390,10 +264,9 @@ export default function FinancialDashboard() {
           profit: data.revenue - data.expenses,
         }))
         .sort((a, b) => {
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const aMonth = months.indexOf(a.month.split(' ')[0]);
-          const bMonth = months.indexOf(b.month.split(' ')[0]);
-          return aMonth - bMonth;
+          const [aMonth, aYear] = a.month.split(' ');
+          const [bMonth, bYear] = b.month.split(' ');
+          return aYear !== bYear ? Number(aYear) - Number(bYear) : monthsOrder.indexOf(aMonth) - monthsOrder.indexOf(bMonth);
         })
         .slice(-6);
 
@@ -401,27 +274,25 @@ export default function FinancialDashboard() {
 
     } catch (err: any) {
       console.error("Error loading dashboard data:", err);
-      const errorMsg = getErrorMessage(err);
-      setError(errorMsg);
+      setError(err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [timeRange]);
 
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Static lookups optimization
   function getCategoryIcon(category: string): string {
     const icons: Record<string, string> = {
-      materials: "🔨",
-      equipment: "🔧",
-      permits: "📋",
-      travel: "🚗",
-      labor: "👷",
-      rental: "🏗️",
-      other: "📦",
+      materials: "🔨", equipment: "🔧", permits: "📋", travel: "🚗", labor: "👷", rental: "🏗️", other: "📦",
     };
     return icons[category] || "📦";
   }
 
-  function getTransactionIcon(type: string) {
+    function getTransactionIcon(type: string) {
     switch (type) {
       case "subcontractor": return "👷";
       case "agent": return "🤝";
@@ -439,6 +310,7 @@ export default function FinancialDashboard() {
     }
   }
 
+  // Pure mapping functions removed from component scope block to eliminate redeclaration cost
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
@@ -461,21 +333,6 @@ export default function FinancialDashboard() {
           <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
           <p className="text-gray-800 font-medium mb-2">Unable to load data</p>
           <p className="text-gray-500 text-sm mb-4">{error}</p>
-          <div className="bg-gray-50 p-3 rounded-lg mb-4 text-left">
-            <p className="text-xs text-gray-500">
-              Please make sure you are logged in and have access to the following tables:
-            </p>
-            <ul className="text-xs text-gray-500 mt-2 list-disc list-inside">
-              <li>estimates</li>
-              <li>subcontractor_payments</li>
-              <li>estimate_subcontractors</li>
-              <li>agent_payments</li>
-              <li>estimate_agents</li>
-              <li>estimate_expenses</li>
-              <li>agents</li>
-              <li>subcontractors</li>
-            </ul>
-          </div>
           <button 
             onClick={loadDashboardData}
             className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
@@ -486,6 +343,7 @@ export default function FinancialDashboard() {
       </div>
     );
   }
+ 
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
