@@ -55,6 +55,12 @@ export default function InvoicePage() {
         .select("*")
         .eq("id", id)
         .single();
+
+        if (invError || !inv) {
+      console.error("Invoice not found");
+      router.push("/invoices");  // redirect to a safe page
+      return;
+    }
       if (invError) throw invError;
       setInvoice(inv);
       setIsLocked(inv?.is_locked === true);
