@@ -439,8 +439,8 @@ export default function PublicEstimatePage() {
       </div>
       
       <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Revised Total</span>
-        <span className="text-base font-black text-gray-900 tracking-tight">{formatCurrency(revisedTotal)}</span>
+        <span className="text-[11px]  tracking-wider text-gray-500">Revised Total</span>
+        <span className="text-[11px] font-black text-gray-900 tracking-tight">{formatCurrency(revisedTotal)}</span>
       </div>
       
       {totalPaid > 0 && (
@@ -454,9 +454,9 @@ export default function PublicEstimatePage() {
 
   {/* REMAINING BALANCE Estimate - always shown */}
   <div className={`${approvedTotal !== 0 ? "mt-3 pt-1 border-t border-gray-200" : ""}`}>
-    <div className="flex justify-between items-center bg-gray-100 rounded-lg p-3">
+    <div className="flex justify-between items-center   rounded-lg ">
       <span className="text-sm font-black uppercase tracking-wider text-gray-600">Estimate</span>
-      <span className="text-xl font-black text-gray-900 tracking-tight">{formatCurrency(remainingBalance)}</span>
+      <span className="text-md font-black text-gray-900 tracking-tight">{formatCurrency(remainingBalance)}</span>
     </div>
   </div>
 
