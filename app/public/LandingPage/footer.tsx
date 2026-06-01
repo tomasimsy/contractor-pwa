@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -74,6 +75,7 @@ export default function Footer() {
 
           <p className="text-xs text-white/50">
             Home Remodeling • Business Renovation • Construction Services
+            <Link href="/installPWA" className="...">Install App</Link>
           </p>
         </div>
       </div>
