@@ -9,6 +9,10 @@ import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import FinancialDashboard from "@/components/FinancialDashboard";
 import { Plus, FilePlus, FileText, AlertCircle, LogOut } from "lucide-react";
+import NotificationListener from "@/components/NotificationListener";
+import toast, { Toaster } from "react-hot-toast";
+
+import { useRealTimeEstimates } from "@/lib/hooks/useRealTimeEstimates";
 
 interface DashboardStats {
   estimates: number;
@@ -20,6 +24,10 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
+
+   useRealTimeEstimates(); 
+
+
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -119,6 +127,7 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
+      <NotificationListener />
       <div className="min-h-screen bg-slate-50/60 pb-28 font-sans antialiased">
         {/* Sticky header */}
         <div className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
@@ -131,6 +140,7 @@ export default function Dashboard() {
                 <span className="text-xl font-medium tracking-tight text-slate-700">Pros</span>
               </div>
             </Link>
+            <button onClick={() => toast.success('Toast works!')}>Test Toast</button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
@@ -315,6 +325,7 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+      
     </ProtectedRoute>
   );
 }
