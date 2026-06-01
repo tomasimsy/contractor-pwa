@@ -224,8 +224,8 @@ export default function FinancialDashboard() {
       <div className="rounded-xl border border-slate-200/60 bg-slate-50/20 p-3">
         <div className="grid grid-cols-2 gap-4 divide-x divide-slate-200/50">
           {/* Estimate Tracking Blocks */}
-          <div>
-            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Estimates</div>
+          <div className="">
+            <div className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Estimates</div>
             <div className="text-base font-semibold text-slate-800 mt-0.5">{stats.estimates}</div>
             <div className="mt-1 flex gap-2 text-[9px] text-emerald-700 font-medium">
               <span className="bg-emerald-50 px-1 py-0.5 rounded">Signed: {stats.signed}</span>
@@ -248,6 +248,7 @@ export default function FinancialDashboard() {
           <div className="mb-1.5 flex justify-between text-[9px] text-emerald-700">
             <span>Net Growth Tracking</span>
             <span className="font-medium text-emerald-800">Month: {formatCurrency(stats.monthlyProfit)}</span>
+            <span className="font-medium text-emerald-800">Net: {formatCurrency(stats.netProfit)}</span>
           </div>
           <div className="h-1 w-full rounded-full bg-slate-100">
             <div
