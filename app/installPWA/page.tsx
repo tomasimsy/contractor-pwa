@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Smartphone, Share2, ExternalLink } from "lucide-react";
+import { Download, Smartphone, Share2, ExternalLink, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 export default function InstallPwaPage() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -86,7 +85,7 @@ export default function InstallPwaPage() {
       <div className="max-w-md mx-auto p-5 space-y-6">
         {/* Hero card */}
         <div className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-200">
-          <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+          <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Smartphone size={40} className="text-emerald-600" />
           </div>
           <h2 className="text-lg font-bold text-slate-800 mb-2">Install OSR Pros</h2>
@@ -94,7 +93,6 @@ export default function InstallPwaPage() {
             Get the full experience with quick access, offline support, and a home screen icon.
           </p>
           
-          {/* Primary install button */}
           {showInstall && !isIOS && (
             <button
               onClick={handleInstall}
@@ -105,7 +103,6 @@ export default function InstallPwaPage() {
             </button>
           )}
 
-          {/* iOS instructions */}
           {isIOS && (
             <div className="space-y-3">
               <div className="bg-slate-50 rounded-xl p-4 text-left">
@@ -131,7 +128,6 @@ export default function InstallPwaPage() {
             </div>
           )}
 
-          {/* If no prompt (e.g., already visited but not installed) – fallback */}
           {!showInstall && !isIOS && (
             <div className="text-center">
               <p className="text-sm text-amber-600 mb-3">Install prompt not available right now.</p>
@@ -159,7 +155,6 @@ export default function InstallPwaPage() {
           </ul>
         </div>
 
-        {/* Footer note */}
         <p className="text-center text-[10px] text-slate-400">
           The app is a Progressive Web App (PWA). Installation is optional but recommended.
         </p>

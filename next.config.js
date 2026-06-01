@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+});
+
 const nextConfig = {
-  // Replace deprecated images.domains with remotePatterns
+  reactStrictMode: true,
+
+  // Image configuration
   images: {
     remotePatterns: [
       {
@@ -25,10 +34,6 @@ const nextConfig = {
       },
     ],
   },
-  // Remove deprecated options
-  reactStrictMode: true,
-  // swcMinify is enabled by default in Next.js 14+, remove it
-  // experimental.appDir is also enabled by default, remove it
-}
+};
 
-module.exports = nextConfig
+module.exports = withPWA(nextConfig);

@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
+
+  
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@react-pdf/renderer": "^4.5.1",
