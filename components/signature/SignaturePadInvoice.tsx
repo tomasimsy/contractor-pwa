@@ -207,9 +207,16 @@ export default function SignaturePadInvoice({
   // Main Card Component
   return (
     <div className="bg-white rounded-xl p-5 shadow-md border border-gray-200 mt-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-[1px]">
+      
+            
+      {/* ALWAYS SHOW TERMS */}
+      <TermsAndConditions />
+      
       <h3 className="text-sm font-semibold text-gray-700 mb-3">
         Customer Signature
       </h3>
+
+
 
       {signed ? (
         <div className="text-center py-6 bg-green-50 rounded-xl border-2 border-green-600 transition-all duration-200 hover:shadow-md hover:bg-green-100/60">
@@ -256,7 +263,7 @@ export default function SignaturePadInvoice({
         </div>
       ) : (
         <>
-          <TermsAndConditions />
+          {/* <TermsAndConditions /> */}
           
           <p className="text-xs text-gray-500 mb-4">
             By signing below, you agree to the terms and conditions above.
