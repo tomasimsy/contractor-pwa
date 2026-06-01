@@ -12,7 +12,7 @@ interface SignaturePadProps {
   isCompleted?: boolean;
 }
 
-const BRAND_GREEN = "#0e542c";
+const BRAND_GREEN = "#009966";
 
 export default function SignaturePad({
   onSave,
@@ -206,7 +206,7 @@ const handleRemoveClick = () => {
               setSignatureType("draw");
               setShowModal(true);
             }}
-            className="mt-2 text-xs px-3 py-1 rounded-lg text-white transition-all duration-200 hover:shadow-md hover:brightness-110 active:scale-[0.97]"
+            className="mt-2 text-xs px-3 py-1 rounded-lg text-white bg-emerald-600 transition-all duration-200 hover:shadow-md hover:brightness-110 active:scale-[0.97]"
             style={{ backgroundColor: BRAND_GREEN }}
           >
             Re-sign
@@ -264,7 +264,7 @@ const handleRemoveClick = () => {
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => setSignatureType("type")}
-                className={`flex-1 py-2 text-sm rounded-lg transition ${
+                className={`flex-1 py-2 text-sm rounded-lg transition bg-emerald-600 ${
                   signatureType === "type"
                     ? "text-white"
                     : "bg-gray-100 text-gray-600"

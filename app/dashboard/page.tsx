@@ -124,14 +124,12 @@ export default function Dashboard() {
         <div className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
           <div className="mx-auto max-w-xl flex items-center justify-between px-4 py-3">
             <Link href="/" className="flex items-center">
-              <Image
-                src="/OSR_logo.png"
-                alt="One Square Roof"
-                width={130}
-                height={35}
-                className="h-4.5 w-auto object-contain"
-                priority
-              />
+              <div className="flex items-center gap-1">
+                <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-xl font-black tracking-tight text-white">
+                  OSR
+                </span>
+                <span className="text-xl font-medium tracking-tight text-slate-700">Pros</span>
+              </div>
             </Link>
             <button
               onClick={handleLogout}

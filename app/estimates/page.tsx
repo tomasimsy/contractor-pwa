@@ -8,7 +8,7 @@ import { formatCurrency, formatShortDate } from "@/lib/utils/formatting";
 import Header from "@/components/ui/Header";
 import DeleteModal from "@/components/ui/DeleteModal";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { Send, Trash2, MessageCircle, Link2, Plus, FilePlus, Eye, Search } from "lucide-react";
+import { Send, Trash2, MessageCircle, Link2, Plus, FilePlus, Eye, Search, ArrowRight } from "lucide-react";
 
 export default function EstimatesPage() {
   const router = useRouter();
@@ -196,13 +196,13 @@ export default function EstimatesPage() {
           {/* CONTROL META COMPONENT HEADLINE */}
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <div className="text-base font-bold text-slate-900 tracking-tight">Active Estimates</div>
+              <div className="text-[16px] uppercase font-bold text-slate-900 tracking-tight">Active Estimates</div>
               <div className="text-xs text-slate-400">Draft, send, track pipeline conversions</div>
             </div>
 
             {!loading && filteredEstimates.length > 0 && (
               <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-1 text-center shadow-xs">
-                <div className="text-[9px] uppercase tracking-wider font-bold text-emerald-800">Pipeline Total</div>
+                <div className="text-[9px] uppercase tracking-wider font-bold text-emerald-800"> Total</div>
                 <div className="text-xs font-bold text-emerald-950">{filteredEstimates.length}</div>
               </div>
             )}
@@ -231,115 +231,101 @@ export default function EstimatesPage() {
 
           {/* ESTIMATES POPULATED ROW CONTENT LIST */}
           <div className="space-y-2">
-            {filteredEstimates.map((estimate) => {
+            {filteredEstimates.map((estimate, index) => {
               const status = getStatus(estimate);
               return (
-                <div
-                  key={estimate.id}
-                  className="group rounded-xl border border-slate-200/70 bg-white px-3.5 py-2.5 shadow-2xs transition-all duration-150 hover:border-[#05291e]/30 hover:shadow-xs capitalize"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    
-                    {/* LEFT DATA INTERACTION CLUSTER */}
-                    <div
-                      className="min-w-0 flex-1 cursor-pointer"
-                      onClick={() => router.push(`/estimates/${estimate.id}`)}
-                    >
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <div className="truncate text-xs font-bold text-slate-800 group-hover:text-[#05291e] transition-colors tracking-tight">
-                          {estimate.clients?.name || "No client specified"}
-                        </div>
-                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase ${status.className}`}>
-                          {status.label}
-                        </span>
-                      </div>
+<div
+  key={estimate.id}
+  className={`group rounded-xl border border-slate-200/70 px-3.5 py-2.5 shadow-2xs transition-all duration-150 capitalize flex items-start gap-3 ${
+    index % 2 === 0 ? "bg-white" : "bg-slate-50/60"
+  } hover:bg-emerald-50 hover:border-emerald-200`}
+>
+  {/* Arrow – will also change color on hover */}
+  <div className="flex h-full items-center text-slate-400 group-hover:text-emerald-700 transition-colors">
+    <ArrowRight size={14} className="shrink-0" />
+  </div>
 
-                      {/* SUBTITLE LABELS META STRIP */}
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-400">
-                        <span className="font-semibold text-slate-600 bg-slate-50 px-1 rounded border border-slate-200 font-mono text-[9px]">
-                          #{estimate.estimate_number || estimate.id.slice(0, 8)}
-                        </span>
-                        <span>•</span>
-                        <span>{formatShortDate(estimate.created_at)}</span>
-                      </div>
+  {/* Clickable content area – text colors change on hover */}
+  <div
+    className="min-w-0 flex-1 cursor-pointer"
+    onClick={() => router.push(`/estimates/${estimate.id}`)}
+  >
+    <div className="flex flex-wrap items-center gap-1.5">
+      <div className="truncate text-xs font-bold text-slate-800 group-hover:text-emerald-800 transition-colors tracking-tight">
+        {estimate.clients?.name || "No client specified"}
+      </div>
+      <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase ${status.className}`}>
+        {status.label}
+      </span>
+    </div>
 
-                      {/* OPTIONAL DESCRIPTION SUBTEXT */}
-                      {estimate.description && (
-                        <div className="mt-1.5 line-clamp-1 text-[11px] leading-relaxed text-slate-500 font-normal normal-case">
-                          {estimate.description}
-                        </div>
-                      )}
+    {/* Subtitle meta strip */}
+    <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
+      <span className="font-semibold text-emerald-600 px-1 rounded border border-slate-200 font-mono text-[9px]">
+        #{estimate.estimate_number || estimate.id.slice(0, 8)}
+      </span>
+      <span>•</span>
+      <span>{formatShortDate(estimate.created_at)}</span>
+    </div>
 
-                      {/* LIVE EVENT VIEW METRICS FOOTER */}
-                      {(estimate as any).opened_at && (
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md bg-slate-50 p-1.5 text-[10px] text-slate-500 border border-slate-100 normal-case">
-                          <Eye size={11} className="text-slate-400 shrink-0" />
-                          <span className="font-medium text-slate-600">
-                            Viewed: {new Date((estimate as any).opened_at).toLocaleDateString()}
-                          </span>
-                          {(estimate as any).opened_count > 1 && (
-                            <span className="bg-emerald-50 text-emerald-700 font-bold px-1 rounded text-[9px]">
-                              {(estimate as any).opened_count}x
-                            </span>
-                          )}
-                          {(estimate as any).opened_device && (
-                            <span className="text-slate-400 truncate max-w-[120px]">
-                              • {(estimate as any).opened_device}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+    {/* Optional description */}
+    {estimate.description && (
+      <div className="mt-1.5 line-clamp-1 text-[11px] leading-relaxed text-slate-500 group-hover:text-slate-700 transition-colors normal-case">
+        {estimate.description}
+      </div>
+    )}
 
-                    {/* RIGHT VALUES & STRUCTURAL ACTIONS PANEL */}
-                    <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
-                      <div className="text-xs font-bold text-slate-900 tracking-tight">
-                        {formatCurrency(estimate.total)}
-                      </div>
+    {/* Viewed metrics – optional */}
+    {(estimate as any).opened_at && (
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md bg-slate-50 p-1.5 text-[10px] text-slate-500 border border-slate-100 normal-case group-hover:bg-emerald-100/50 group-hover:border-emerald-200 transition-colors">
+        <Eye size={11} className="text-slate-400 group-hover:text-emerald-600" />
+        <span className="font-medium group-hover:text-slate-700">
+          Viewed: {new Date((estimate as any).opened_at).toLocaleDateString()}
+        </span>
+        {(estimate as any).opened_count > 1 && (
+          <span className="bg-emerald-50 text-emerald-700 font-bold px-1 rounded text-[9px]">
+            {(estimate as any).opened_count}x
+          </span>
+        )}
+        {(estimate as any).opened_device && (
+          <span className="text-slate-400 group-hover:text-slate-500 truncate max-w-[120px]">
+            • {(estimate as any).opened_device}
+          </span>
+        )}
+      </div>
+    )}
+  </div>
 
-                      {/* ICON ACTION UTILITY BUTTONS PACK */}
-                      <div className="flex gap-1 mt-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyLink(estimate);
-                          }}
-                          className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100"
-                          title="Copy Document Link"
-                        >
-                          <Link2 size={12} />
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            sendSMSLink(estimate);
-                          }}
-                          className="p-1 rounded-md text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors border border-transparent hover:border-emerald-100"
-                          title="Send Mobile SMS"
-                        >
-                          <Send size={12} />
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteModal({
-                              isOpen: true,
-                              id: estimate.id,
-                              name: estimate.clients?.name || "this estimate",
-                            });
-                          }}
-                          className="p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
-                          title="Move to Trash"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
+  {/* Right panel – amount + action buttons */}
+  <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
+    <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-800 transition-colors tracking-tight">
+      {formatCurrency(estimate.total)}
+    </div>
+    <div className="flex gap-1 mt-2">
+      {/* Copy link button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); copyLink(estimate); }}
+        className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100"
+      >
+        <Link2 size={12} />
+      </button>
+      {/* SMS button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); sendSMSLink(estimate); }}
+        className="p-1 rounded-md text-emerald-800 bg-emerald-100 hover:text-emerald-700 hover:bg-emerald-50 transition-colors border border-transparent hover:border-emerald-100"
+      >
+        <Send size={12} />
+      </button>
+      {/* Delete button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setDeleteModal({ isOpen: true, id: estimate.id, name: estimate.clients?.name || "this estimate" }); }}
+        className="p-1 rounded-md text-rose-500 bg-rose-100 hover:text-rose-800 hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100"
+      >
+        <Trash2 size={12} />
+      </button>
+    </div>
+  </div>
+</div>
               );
             })}
           </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { formatCurrency, formatShortDate } from "@/lib/utils/formatting";
-import { ArrowLeft, Search, AlertCircle, Link2, Send } from "lucide-react";
+import { ArrowLeft, Search, AlertCircle, Link2, Send, ArrowRight } from "lucide-react";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -98,106 +98,121 @@ export default function InvoicesPage() {
       </div>
 
       {/* RENDER LISTING */}
-      <div className="mx-auto max-w-xl p-4 space-y-2">
-        <div className="px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-          All Invoices ({filteredInvoices.length})
-        </div>
+<div className="mx-auto max-w-xl p-4 space-y-2">
+<div className="flex items-center justify-between mb-3">
+  <div className="text-[16px] font-bold uppercase tracking-wider text-black">
+    All Invoices 
+  </div>
 
-        {filteredInvoices.length === 0 ? (
-          <div className="rounded-xl border border-slate-100 bg-white py-8 text-center text-xs text-slate-400">
-            No invoices found
-          </div>
-        ) : (
-          filteredInvoices.map((inv) => {
-            const itemOverdue = isOverdue(inv.due_date, inv.status);
-
-            return (
-              <div
-                key={inv.id}
-                className={`group rounded-xl border p-3.5 py-2.5 shadow-2xs transition-all duration-150 capitalize relative ${
-                  itemOverdue 
-                    ? "border-rose-200 bg-rose-50/40 hover:bg-rose-50/70" 
-                    : "border-slate-200/70 bg-white hover:border-[#05291e]/30 hover:shadow-xs"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  
-                  {/* LEFT COLUMN */}
-                  <Link href={`/invoices/${inv.id}`} className="min-w-0 flex-1 block">
-                    <div className="flex items-center gap-1.5">
-                      {itemOverdue && <AlertCircle size={12} className="text-rose-500 shrink-0" />}
-                      <div className={`truncate text-xs font-bold tracking-tight transition-colors ${
-                        itemOverdue ? "text-rose-950" : "text-slate-800 group-hover:text-[#05291e]"
-                      }`}>
-                        {inv.clients?.name || "Untitled Client"}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-medium text-slate-400">
-                      <span className={`font-semibold bg-slate-50 px-1 rounded border font-mono text-[9px] ${
-                        itemOverdue ? "text-rose-600 border-rose-200/60 bg-rose-50" : "text-slate-600 border-slate-200"
-                      }`}>
-                        #{inv.invoice_number}
-                      </span>
-                      <span>•</span>
-                      <span>{formatShortDate(inv.created_at)}</span>
-                    </div>
-
-                    <div className="text-[9px] font-medium mt-1">
-                      {inv.status !== "paid" ? (
-                        <span className={itemOverdue ? "text-rose-500 font-bold" : "text-slate-400"}>
-                          Due {formatShortDate(inv.due_date)}
-                        </span>
-                      ) : (
-                        <span className="text-teal-600 font-medium">Closed</span>
-                      )}
-                    </div>
-                  </Link>
-
-                  {/* RIGHT COLUMN */}
-                  <div className="text-right shrink-0 flex flex-col items-end justify-between self-stretch">
-                    <div className="flex flex-col items-end">
-                      <div className={`text-xs font-bold tracking-tight ${itemOverdue ? "text-rose-700" : "text-slate-900"}`}>
-                        {formatCurrency(inv.remaining_balance || inv.total)}
-                      </div>
-                      
-                      <span className={`mt-1 inline-block text-[9px] font-bold uppercase px-1.5 py-0.5 rounded tracking-wider border ${
-                        inv.status === "paid" 
-                          ? "bg-teal-100/50 text-teal-700 border-teal-200/50" 
-                          : itemOverdue
-                            ? "bg-rose-100/60 text-rose-700 border-rose-200"
-                            : "bg-amber-100/50 text-amber-700 border-amber-200/60"
-                      }`}>
-                        {inv.status === "paid" ? "Paid" : itemOverdue ? "Overdue" : "Pending"}
-                      </span>
-                    </div>
-
-                    {/* INTERACTIVE ACTION LINKS TRUNK */}
-                    <div className="flex gap-1.5 mt-2">
-                      <button
-                        onClick={() => copyLink(inv)}
-                        className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100"
-                        title="Copy Link"
-                      >
-                        <Link2 size={12} />
-                      </button>
-
-                      <button
-                        onClick={() => sendSMSLink(inv)}
-                        className="p-1 rounded-md text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors border border-transparent hover:border-emerald-100"
-                        title="Send SMS"
-                      >
-                        <Send size={12} />
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            );
-          })
-        )}
+  
+    <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-2.5 py-1 text-center shadow-xs">
+      <div className="text-[9px] uppercase tracking-wider font-bold text-emerald-800"> Total</div>
+      <div className="text-xs font-bold text-emerald-950">
+       {filteredInvoices.length}
       </div>
+    </div>
+  
+</div>
+  {filteredInvoices.length === 0 ? (
+    <div className="rounded-xl border border-slate-100 bg-white py-8 text-center text-xs text-slate-400">
+      No invoices found
+    </div>
+  ) : (
+    filteredInvoices.map((inv, index) => {
+      const itemOverdue = isOverdue(inv.due_date, inv.status);
+      const isEven = index % 2 === 0;
+
+      return (
+        <div
+          key={inv.id}
+          className={`group rounded-xl border p-3.5 py-2.5 shadow-2xs transition-all duration-150 capitalize flex items-start gap-3 ${
+            isEven ? "bg-white" : "bg-slate-50/60"
+          } hover:bg-emerald-50 hover:border-emerald-200 ${
+            itemOverdue ? "border-rose-200" : "border-slate-200/70"
+          }`}
+        >
+          {/* RIGHT‑POINTING ARROW (fixed left) */}
+          <div className="flex h-full items-center text-slate-400 group-hover:text-emerald-700 transition-colors">
+            <ArrowRight size={14} className="shrink-0" />
+          </div>
+
+          {/* LEFT COLUMN (clickable) */}
+          <Link href={`/invoices/${inv.id}`} className="min-w-0 flex-1 block">
+            <div className="flex items-center gap-1.5">
+              {itemOverdue && <AlertCircle size={12} className="text-rose-500 shrink-0" />}
+              <div className={`truncate text-xs font-bold tracking-tight transition-colors ${
+                itemOverdue ? "text-rose-950" : "text-slate-800 group-hover:text-emerald-800"
+              }`}>
+                {inv.clients?.name || "Untitled Client"}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-medium text-slate-400 transition-colors group-hover:text-slate-600">
+              <span className={`font-semibold bg-slate-50 px-1 rounded border font-mono text-[9px] transition-colors ${
+                itemOverdue 
+                  ? "text-rose-600 border-rose-200/60 bg-rose-50 group-hover:bg-emerald-100 group-hover:border-emerald-200 group-hover:text-emerald-700" 
+                  : "text-slate-600 border-slate-200 group-hover:bg-emerald-100 group-hover:border-emerald-200 group-hover:text-emerald-700"
+              }`}>
+                #{inv.invoice_number}
+              </span>
+              <span>•</span>
+              <span>{formatShortDate(inv.created_at)}</span>
+            </div>
+
+            <div className="text-[9px] font-medium mt-1">
+              {inv.status !== "paid" ? (
+                <span className={itemOverdue ? "text-rose-500 font-bold" : "text-slate-400 group-hover:text-slate-600 transition-colors"}>
+                  Due {formatShortDate(inv.due_date)}
+                </span>
+              ) : (
+                <span className="text-teal-600 font-medium">Closed</span>
+              )}
+            </div>
+          </Link>
+
+          {/* RIGHT COLUMN (amount, badge, actions) */}
+          <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
+            <div className="flex flex-col items-end">
+              <div className={`text-xs font-bold tracking-tight transition-colors ${
+                itemOverdue ? "text-rose-700" : "text-slate-900 group-hover:text-emerald-800"
+              }`}>
+                {formatCurrency(inv.remaining_balance || inv.total)}
+              </div>
+
+              <span className={`mt-1 inline-block text-[9px] font-bold uppercase px-1.5 py-0.5 rounded tracking-wider border transition-colors ${
+                inv.status === "paid" 
+                  ? "bg-teal-100/50 text-teal-700 border-teal-200/50" 
+                  : itemOverdue
+                    ? "bg-rose-100/60 text-rose-700 border-rose-200 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200"
+                    : "bg-amber-100/50 text-amber-700 border-amber-200/60 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200"
+              }`}>
+                {inv.status === "paid" ? "Paid" : itemOverdue ? "Overdue" : "Pending"}
+              </span>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-1.5 mt-2">
+              <button
+                onClick={() => copyLink(inv)}
+                className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100"
+                title="Copy Link"
+              >
+                <Link2 size={12} />
+              </button>
+              <button
+                onClick={() => sendSMSLink(inv)}
+                className="p-1 rounded-md text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors border border-transparent hover:border-emerald-100"
+                title="Send SMS"
+              >
+                <Send size={12} />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })
+  )}
+</div>
 
     </div>
   );

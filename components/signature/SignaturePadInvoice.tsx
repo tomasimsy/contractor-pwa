@@ -14,7 +14,7 @@ interface SignaturePadInvoiceProps {
   showDetailedBreakdown?: boolean;
 }
 
-const BRAND_GREEN = "#0e542c";
+const BRAND_GREEN = "#009966";
 
 export default function SignaturePadInvoice({
   onSave,

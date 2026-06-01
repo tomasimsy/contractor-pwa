@@ -1155,7 +1155,7 @@ export default function EstimatePage() {
 
       {/* FAB */}
 {!isEditMode && (
-  <div className="fixed bottom-6 right-6 z-50" onMouseEnter={() => setFabOpen(true)} onMouseLeave={() => setFabOpen(false)}>
+  <div className="fixed bottom-21 right-6 z-50" onMouseEnter={() => setFabOpen(true)} onMouseLeave={() => setFabOpen(false)}>
     <div className={`absolute bottom-full right-0 pb-3 flex flex-col items-end gap-1.5 transition-all duration-200 transform origin-bottom ${
       fabOpen ? "scale-100 opacity-100 translate-y-0" : "scale-75 opacity-0 translate-y-4 pointer-events-none"
     }`}>

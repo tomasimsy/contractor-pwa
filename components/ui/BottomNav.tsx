@@ -8,26 +8,10 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      label: "Estimates",
-      href: "/estimates",
-      icon: ClipboardList,
-    },
-    {
-      label: "Invoices",
-      href: "/invoices",
-      icon: FileText,
-    },
-    {
-      label: "Settings",
-      href: "/settings",
-      icon: Settings,
-    },
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Estimates", href: "/estimates", icon: ClipboardList },
+    { label: "Invoices", href: "/invoices", icon: FileText },
+    { label: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (
@@ -46,15 +30,15 @@ export default function BottomNav() {
               <div
                 className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? "text-[#05291e] bg-[#05291e]/[0.06] font-semibold"
+                    ? "text-emerald-600 bg-emerald-600/10 font-semibold"
                     : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-medium"
                 }`}
               >
-                <Icon 
-                  size={18} 
+                <Icon
+                  size={18}
                   className={`transition-transform duration-200 group-active:scale-95 ${
                     isActive ? "stroke-[2.25px]" : "stroke-[1.75px]"
-                  }`} 
+                  }`}
                 />
                 <span className="text-[10px] tracking-tight">{item.label}</span>
               </div>
