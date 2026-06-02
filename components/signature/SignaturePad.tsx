@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 import { Signature } from "@/types";
+import toast from "react-hot-toast";
 
 interface SignaturePadProps {
   onSave: (signature: Signature) => void;
-  onRemove?: () => void;
+  onRemove?: (estimateId: string) => Promise<void>; // must handle DB update and call parent refresh
   existingSignature?: Signature | null;
   buttonText?: string;
   showRemoveButton?: boolean;
   isCompleted?: boolean;
+  estimateId: string; // required for removal
+  onRefresh?: () => void; // optional refresh after removal
 }
 
 const BRAND_GREEN = "#009966";
@@ -21,6 +25,8 @@ export default function SignaturePad({
   isCompleted,
   buttonText = "Sign Document",
   showRemoveButton = true,
+  estimateId,
+  onRefresh,
 }: SignaturePadProps) {
   const [showModal, setShowModal] = useState(false);
   const [signatureType, setSignatureType] = useState<"type" | "draw">("type");
@@ -40,34 +46,28 @@ export default function SignaturePad({
 
   const initCanvas = () => {
     if (!canvasRef.current) return;
-
     const canvas = canvasRef.current;
     canvas.width = 400;
     canvas.height = 150;
     canvas.style.width = "100%";
     canvas.style.height = "auto";
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#111";
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     ctxRef.current = ctx;
   };
 
   const getCanvasCoordinates = (e: any) => {
     if (!canvasRef.current) return null;
-    
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
     let clientX, clientY;
     if ("touches" in e) {
       clientX = e.touches[0].clientX;
@@ -76,125 +76,115 @@ export default function SignaturePad({
       clientX = e.clientX;
       clientY = e.clientY;
     }
-    
     const x = (clientX - rect.left) * scaleX;
     const y = (clientY - rect.top) * scaleY;
-    
     return {
       x: Math.min(Math.max(0, x), canvas.width),
-      y: Math.min(Math.max(0, y), canvas.height)
+      y: Math.min(Math.max(0, y), canvas.height),
     };
   };
 
   const startDrawing = (e: any) => {
     if (!canvasRef.current || !ctxRef.current) return;
     e.preventDefault();
-    
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
-
     setIsDrawing(true);
-    const ctx = ctxRef.current;
-    
-    ctx.beginPath();
-    ctx.moveTo(coords.x, coords.y);
+    ctxRef.current.beginPath();
+    ctxRef.current.moveTo(coords.x, coords.y);
   };
 
   const draw = (e: any) => {
     if (!isDrawing || !canvasRef.current || !ctxRef.current) return;
     e.preventDefault();
-    
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
-    
-    const ctx = ctxRef.current;
-    
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(coords.x, coords.y);
+    ctxRef.current.lineTo(coords.x, coords.y);
+    ctxRef.current.stroke();
+    ctxRef.current.beginPath();
+    ctxRef.current.moveTo(coords.x, coords.y);
   };
 
   const stopDrawing = () => setIsDrawing(false);
-
   const clearCanvas = () => {
     if (!canvasRef.current || !ctxRef.current) return;
-
     const canvas = canvasRef.current;
     const ctx = ctxRef.current;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     setTypedName("");
   };
 
- const handleSave = () => {
-  let value = "";
-
-  if (signatureType === "draw" && canvasRef.current) {
-    value = canvasRef.current.toDataURL();
-  } else if (signatureType === "type" && typedName.trim()) {
-    value = typedName.trim();
-  } else {
-    setErrorMsg("Please provide a signature before saving.");
-    return;
-  }
-
-  setErrorMsg("");
-  onSave({ type: signatureType, value, date: new Date().toISOString() });
-  setShowModal(false);
-  setTypedName("");
-  if (canvasRef.current && ctxRef.current) clearCanvas();
-};
-
-
-const handleRemoveClick = () => {
-  console.log("Remove button clicked, opening confirm modal");
-  setShowRemoveConfirm(true);
-};
-
-  const confirmRemove = () => {
-    if (onRemove) {
-      onRemove();
+  const handleSave = () => {
+    let value = "";
+    if (signatureType === "draw" && canvasRef.current) {
+      value = canvasRef.current.toDataURL();
+    } else if (signatureType === "type" && typedName.trim()) {
+      value = typedName.trim();
+    } else {
+      setErrorMsg("Please provide a signature before saving.");
+      return;
     }
-    setShowRemoveConfirm(false);
+    setErrorMsg("");
+    onSave({ type: signatureType, value, date: new Date().toISOString() });
+    setShowModal(false);
+    setTypedName("");
+    if (canvasRef.current && ctxRef.current) clearCanvas();
   };
 
-  /* ---------------- EXISTING SIGNATURE ---------------- */
+  const handleRemoveClick = () => setShowRemoveConfirm(true);
+
+  const handleConfirmRemove = async () => {
+    setShowRemoveConfirm(false);
+    if (!onRemove) {
+      toast.error("Remove function not available", { duration: 3000 });
+      return;
+    }
+    try {
+      await onRemove(estimateId);
+      toast.success("Signature removed successfully", {
+        duration: 3000,
+        position: "top-center",
+        icon: "🗑️",
+        style: {
+          background: "#fef3c7",
+          color: "#92400e",
+          border: "1px solid #fbbf24",
+          padding: "6px 12px",
+          fontSize: "12px",
+        },
+      });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove signature", { duration: 3000 });
+    }
+  };
+
+  // Existing signature view
   if (existingSignature) {
     return (
       <>
         <div className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm relative">
-          {/* Remove Button - Top Right Corner */}
- 
-{showRemoveButton && onRemove && !isCompleted && (
-  <button
-    type="button"
-    onClick={handleRemoveClick}
-    className="absolute top-2 right-2 w-2 h-2 rounded-full bg-gray-500 text-white text-[8px] font-bold shadow-sm"
-    title="Remove Signature"
-  >
-    X
-  </button>
-)}
-          
-          {existingSignature.type === "draw" ? (
-            <img
-              src={existingSignature.value}
-              alt="Signature"
-              className="max-h-16 mx-auto"
-            />
-          ) : (
-            <div className="text-xl font-semibold text-gray-800">
-              {existingSignature.value}
-            </div>
+          {showRemoveButton && onRemove && !isCompleted && (
+            <button
+              type="button"
+              onClick={handleRemoveClick}
+              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center hover:bg-gray-300 transition"
+              title="Remove Signature"
+            >
+              ✕
+            </button>
           )}
-
+          {existingSignature.type === "draw" ? (
+            <img src={existingSignature.value} alt="Signature" className="max-h-16 mx-auto" />
+          ) : (
+            <div className="text-xl font-semibold text-gray-800">{existingSignature.value}</div>
+          )}
           <div className="text-[11px] text-gray-400 mt-2">
             Signed on {new Date(existingSignature.date).toLocaleDateString()}
           </div>
-
           <button
             type="button"
             onClick={() => {
@@ -208,7 +198,7 @@ const handleRemoveClick = () => {
           </button>
         </div>
 
-        {/* Remove Confirmation Modal */}
+        {/* Remove Confirmation Modal (unchanged style) */}
         {showRemoveConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl max-w-sm w-full p-5">
@@ -224,7 +214,7 @@ const handleRemoveClick = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={confirmRemove}
+                  onClick={handleConfirmRemove}
                   className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
                 >
                   Remove Signature
@@ -237,7 +227,7 @@ const handleRemoveClick = () => {
     );
   }
 
-  /* ---------------- NO SIGNATURE ---------------- */
+  // No signature – show button and modal
   return (
     <>
       <button
@@ -248,54 +238,35 @@ const handleRemoveClick = () => {
         ✍️ {buttonText}
       </button>
 
-      {/* Signature Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          
           <div className="bg-white rounded-xl w-full max-w-md p-5 shadow-lg border border-green-100">
-            {/* // Inside the modal JSX, right above the action buttons: */}
-{errorMsg && (
-  <div className="mb-3 rounded-lg bg-amber-50 border-l-4 border-amber-500 p-2 text-xs text-amber-700">
-    ⚠️ {errorMsg}
-  </div>
-)}
-            <h3 className="text-base font-semibold text-gray-900 mb-3">
-              Customer Signature
-            </h3>
-
+            {errorMsg && (
+              <div className="mb-3 rounded-lg bg-amber-50 border-l-4 border-amber-500 p-2 text-xs text-amber-700">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+            <h3 className="text-base font-semibold text-gray-900 mb-3">Customer Signature</h3>
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => setSignatureType("type")}
-                className={`flex-1 py-2 text-sm rounded-lg transition bg-emerald-600 ${
-                  signatureType === "type"
-                    ? "text-white"
-                    : "bg-gray-100 text-gray-600"
+                className={`flex-1 py-2 text-sm rounded-lg transition ${
+                  signatureType === "type" ? "text-white" : "bg-gray-100 text-gray-600"
                 }`}
-                style={
-                  signatureType === "type"
-                    ? { backgroundColor: BRAND_GREEN }
-                    : undefined
-                }
+                style={signatureType === "type" ? { backgroundColor: BRAND_GREEN } : undefined}
               >
                 Type
               </button>
               <button
                 onClick={() => setSignatureType("draw")}
                 className={`flex-1 py-2 text-sm rounded-lg transition ${
-                  signatureType === "draw"
-                    ? "text-white"
-                    : "bg-gray-100 text-gray-600"
+                  signatureType === "draw" ? "text-white" : "bg-gray-100 text-gray-600"
                 }`}
-                style={
-                  signatureType === "draw"
-                    ? { backgroundColor: BRAND_GREEN }
-                    : undefined
-                }
+                style={signatureType === "draw" ? { backgroundColor: BRAND_GREEN } : undefined}
               >
                 Draw
               </button>
             </div>
-
             {signatureType === "type" ? (
               <input
                 type="text"
@@ -307,10 +278,7 @@ const handleRemoveClick = () => {
                 autoFocus
               />
             ) : (
-              <div 
-                className="border border-gray-200 rounded-lg overflow-hidden"
-                onTouchMove={(e) => e.preventDefault()}
-              >
+              <div className="border border-gray-200 rounded-lg overflow-hidden" onTouchMove={(e) => e.preventDefault()}>
                 <canvas
                   ref={canvasRef}
                   className="w-full bg-white touch-none"
@@ -330,9 +298,7 @@ const handleRemoveClick = () => {
                 </div>
               </div>
             )}
-
             <div className="flex gap-2 mt-4">
-              
               <button
                 onClick={() => setShowModal(false)}
                 className="flex-1 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"

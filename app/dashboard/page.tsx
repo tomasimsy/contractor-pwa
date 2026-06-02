@@ -44,68 +44,78 @@ const { addNotification } = useNotifications(); // ✅ top level test
   const [recentInvoices, setRecentInvoices] = useState<any[]>([]);
   const [overdueInvoices, setOverdueInvoices] = useState<any[]>([]);
 
-  const loadDashboard = useCallback(async () => {
-    try {
-      setLoading(true);
-      const todayString = new Date().toISOString().split("T")[0];
+const loadDashboard = useCallback(async () => {
+  try {
+    setLoading(true);
+    const todayString = new Date().toISOString().split("T")[0];
 
-      const [
-        estimatesRes,
-        invoicesRes,
-        recentEstRes,
-        recentInvRes,
-        overdueRes,
-      ] = await Promise.all([
-        supabase.from("estimates").select("signature, status"),
-        supabase.from("invoices").select("status, remaining_balance"),
-        supabase
-          .from("estimates")
-          .select("id, created_at, total, estimate_number, clients(name), signature")
-          .order("created_at", { ascending: false })
-          .eq("is_completed", false)
-          .is("deleted_at", null)
-          .limit(5),
-        supabase
-          .from("invoices")
-          .select("id, created_at, total, invoice_number, clients(name), status")
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("invoices")
-          .select("id, invoice_number, total, remaining_balance, due_date, clients(name)")
-          .lt("due_date", todayString)
-          .neq("status", "paid"),
-      ]);
+    const [
+      estimatesRes,
+      invoicesRes,
+      recentEstRes,
+      recentInvRes,
+      overdueRes,
+    ] = await Promise.all([
+      supabase.from("estimates").select("signature, status"),
+      supabase.from("invoices").select("status, remaining_balance"),
+      supabase
+        .from("estimates")
+        .select("id, created_at, total, estimate_number, clients(name), signature")
+        .order("created_at", { ascending: false })
+        .eq("is_completed", false)
+        .is("deleted_at", null)
+        .limit(10), // fetch 10 to have enough for sorting
+      supabase
+        .from("invoices")
+        .select("id, created_at, total, invoice_number, clients(name), status")
+        .order("created_at", { ascending: false })
+        .limit(5),
+      supabase
+        .from("invoices")
+        .select("id, invoice_number, total, remaining_balance, due_date, clients(name)")
+        .lt("due_date", todayString)
+        .neq("status", "paid"),
+    ]);
 
-      const nextStats: DashboardStats = {
-        estimates: estimatesRes.data?.length || 0,
-        signed: 0,
-        converted: 0,
-        invoices: invoicesRes.data?.length || 0,
-        paid: 0,
-        pending: 0,
-      };
+    const nextStats: DashboardStats = {
+      estimates: estimatesRes.data?.length || 0,
+      signed: 0,
+      converted: 0,
+      invoices: invoicesRes.data?.length || 0,
+      paid: 0,
+      pending: 0,
+    };
 
-      estimatesRes.data?.forEach((e) => {
-        if (e.signature) nextStats.signed++;
-        if (e.status === "converted") nextStats.converted++;
-      });
+    estimatesRes.data?.forEach((e) => {
+      if (e.signature) nextStats.signed++;
+      if (e.status === "converted") nextStats.converted++;
+    });
 
-      invoicesRes.data?.forEach((i) => {
-        if (i.status === "paid") nextStats.paid++;
-        else if ((i.remaining_balance || 0) > 0) nextStats.pending++;
-      });
+    invoicesRes.data?.forEach((i) => {
+      if (i.status === "paid") nextStats.paid++;
+      else if ((i.remaining_balance || 0) > 0) nextStats.pending++;
+    });
 
-      setStats(nextStats);
-      if (recentEstRes.data) setRecentEstimates(recentEstRes.data);
-      if (recentInvRes.data) setRecentInvoices(recentInvRes.data);
-      if (overdueRes.data) setOverdueInvoices(overdueRes.data);
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    setStats(nextStats);
+
+    // Sort recent estimates: signed first, then by created_at descending
+    let sortedRecentEstimates = recentEstRes.data || [];
+    sortedRecentEstimates.sort((a, b) => {
+      const aSigned = a.signature ? 1 : 0;
+      const bSigned = b.signature ? 1 : 0;
+      if (aSigned !== bSigned) return bSigned - aSigned; // signed first
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    setRecentEstimates(sortedRecentEstimates.slice(0, 5)); // take top 5
+
+    if (recentInvRes.data) setRecentInvoices(recentInvRes.data);
+    if (overdueRes.data) setOverdueInvoices(overdueRes.data);
+  } catch (error) {
+    console.error("Error loading dashboard data:", error);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     loadDashboard();
@@ -125,7 +135,6 @@ const { addNotification } = useNotifications(); // ✅ top level test
       </div>
     );
   }
-
 
   
   return (

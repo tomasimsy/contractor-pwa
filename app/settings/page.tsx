@@ -137,6 +137,28 @@ return (
         Open →
       </div>
       </Link>
+            <Link href="/clients/" target=""
+        className="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:shadow-md">
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-gray-700 group-hover:bg-gray-900 group-hover:text-white transition">
+          <Settings2 size={18} />
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold text-gray-900">
+            Clients
+          </div>
+          {/* <div className="text-xs text-gray-500">
+            Open external settings dashboard
+          </div> */}
+        </div>
+      </div>
+
+      <div className="text-xs font-medium text-gray-400 group-hover:text-gray-700 transition">
+        Open →
+      </div>
+      </Link>
 
       {/* COMPANY */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">

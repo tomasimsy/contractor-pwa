@@ -11,6 +11,8 @@ import ProjectFinancialsModal from "@/components/ProjectFinancialsModal";
 import ExpenseModal from "@/components/ExpenseModal";
 import Link from "next/link";
 import { SquarePen, Send, FileText, Users, Receipt, DollarSign, Plus, FileEdit, X, Trash2, ArrowLeft, Target, Sparkles } from "lucide-react";
+import toast from "react-hot-toast";
+
 
 type ProjectWithItems = {
   id: string;
@@ -309,31 +311,42 @@ export default function EstimatePage() {
     }
   }
 
-  const saveSignature = async (signature: Signature) => {
-    const { error } = await supabase
-      .from("estimates")
-      .update({ signature, status: "approved" })
-      .eq("id", id);
-    if (!error) {
-      setEstimate({ ...estimate, signature } as Estimate);
-      alert("Signature saved!");
-    }
-  };
+const saveSignature = async (signature: Signature) => {
+  const { error } = await supabase
+    .from("estimates")
+    .update({ signature, status: "approved" })
+    .eq("id", id);
+  if (!error) {
+    setEstimate({ ...estimate, signature } as Estimate);
+    toast.success("Signature saved successfully!", {
+      duration: 3000,
+      position: "top-center",
+      icon: "✍️",
+      style: {
+        background: "#fef3c7",
+        color: "#92400e",
+        border: "1px solid #fbbf24",
+        padding: "6px 12px",
+        fontSize: "12px",
+      },
+    });
+  } else {
+    toast.error("Error saving signature. Please try again.", {
+      duration: 3000,
+      position: "top-center",
+    });
+  }
+};
 
-  const removeSignature = async () => {
-    if (!confirm("Remove the signature? The estimate will need to be resigned.")) return;
-    const { error } = await supabase
-      .from("estimates")
-      .update({ signature: null, status: "pending" })
-      .eq("id", id);
-    if (!error) {
-      setEstimate((prev) => (prev ? { ...prev, signature: null, status: "pending" } : prev));
-      alert("Signature removed.");
-      loadEstimate();
-    } else {
-      alert("Error removing signature");
-    }
-  };
+const removeSignature = async (estimateId: string) => {
+  // No confirm – the modal in SignaturePad already asked for confirmation.
+  const { error } = await supabase
+    .from("estimates")
+    .update({ signature: null, status: "pending" })
+    .eq("id", estimateId);
+  if (error) throw error;
+  // No alert – the SignaturePad will show a toast on success or error.
+};
 
   const markAsCompleted = async () => {
     if (!confirm("Mark this estimate as completed? It will be moved to completed list and won't be editable.")) return;
@@ -1099,14 +1112,16 @@ export default function EstimatePage() {
               <FileText size={12} className="text-slate-300" /> Authorized Customer Endorsement
             </div>
             <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-1 shadow-inner">
-              <SignaturePad
-                onSave={saveSignature}
-                onRemove={removeSignature}
-                isCompleted={estimate?.is_completed}
-                existingSignature={estimate?.signature}
-                buttonText="Need Customer Signature"
-                showRemoveButton={true}
-              />
+<SignaturePad
+  onSave={saveSignature}
+  onRemove={removeSignature}
+  isCompleted={estimate?.is_completed}
+  existingSignature={estimate?.signature}
+  buttonText="Need Customer Signature"
+  showRemoveButton={true}
+  estimateId={id as string}
+  onRefresh={loadEstimate}
+/>
             </div>
           </div>
         )}

@@ -229,21 +229,25 @@ const copyLink = (inv: any) => {
 
             {/* RIGHT COLUMN (amount, badge, actions) */}
             <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
-              <div className="flex flex-col items-end">
-                <div className={`text-xs font-bold tracking-tight transition-colors ${ itemOverdue ? "text-rose-700"
-                  : "text-slate-900 group-hover:text-emerald-800" }`}>
-                  {formatCurrency(inv.remaining_balance || inv.total)}
-                </div>
+            <div className="flex flex-col items-end">
+              <div className={`text-xs font-bold tracking-tight transition-colors ${
+                itemOverdue ? "text-rose-700" : "text-slate-900 group-hover:text-emerald-800"
+              }`}>
+                {formatCurrency(inv.remaining_balance || inv.total)}
+              </div>
 
-                <span className={`mt-1 inline-block text-[9px] font-bold uppercase px-1.5 py-0.5 rounded tracking-wider
-                  border transition-colors ${ inv.status==="paid" ? "bg-teal-100/50 text-teal-700 border-teal-200/50" :
-                  itemOverdue
+              <span className={`mt-1 inline-block text-[9px] font-bold uppercase px-1.5 py-0.5 rounded tracking-wider border transition-colors ${
+                inv.status === "paid"
+                  ? "bg-teal-100/50 text-teal-700 border-teal-200/50"
+                  : inv.status === "partial"
+                  ? "bg-blue-100/50 text-blue-700 border-blue-200/60 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200"
+                  : itemOverdue
                   ? "bg-rose-100/60 text-rose-700 border-rose-200 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200"
                   : "bg-amber-100/50 text-amber-700 border-amber-200/60 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200"
-                  }`}>
-                  {inv.status === "paid" ? "Paid" : itemOverdue ? "Overdue" : "Pending"}
-                </span>
-              </div>
+              }`}>
+                {inv.status === "paid" ? "Paid" : inv.status === "partial" ? "Partial" : itemOverdue ? "Overdue" : "Pending"}
+              </span>
+            </div>
 
               {/* Action buttons */}
               <div className="flex gap-1.5 mt-2">
