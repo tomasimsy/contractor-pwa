@@ -28,34 +28,43 @@ export default function EstimatesPage() {
   const [isFabOpen, setIsFabOpen] = useState(false);
 
   // 1. Memoized data fetcher
-  const loadEstimates = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from("estimates")
-        .select(`
-          id, 
-          estimate_number, 
-          created_at, 
-          total, 
-          signature, 
-          status,
-          description,
-          clients (name, phone)
-        `)
-        .is("deleted_at", null)
-        .eq("is_completed", false)
-        .order("created_at", { ascending: false });
+const loadEstimates = useCallback(async () => {
+  try {
+    setLoading(true);
+    
+    const { data, error } = await supabase
+      .from("estimates")
+      .select(`
+        id, 
+        estimate_number, 
+        created_at, 
+        total, 
+        signature, 
+        status,
+        description,
+        clients (name, phone)
+      `)
+      .is("deleted_at", null)
+      .eq("is_completed", false)
+      .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      if (data) setEstimates(data as unknown as Estimate[]);
-    } catch (error) {
-      console.error("Error loading estimates:", error);
-    } finally {
-      setLoading(false);
+    if (error) throw error;
+    if (data) {
+      // Sort: signed first (signature not null), then by created_at desc
+      const sorted = [...data].sort((a, b) => {
+        const aSigned = a.signature ? 1 : 0;
+        const bSigned = b.signature ? 1 : 0;
+        if (aSigned !== bSigned) return bSigned - aSigned; // signed first
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      setEstimates(sorted as unknown as Estimate[]);
     }
-  }, []);
+  } catch (error) {
+    console.error("Error loading estimates:", error);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     loadEstimates();
