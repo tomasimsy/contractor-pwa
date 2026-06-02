@@ -26,7 +26,7 @@ export default function SignaturePadInvoice({
   showDetailedBreakdown = true,
 }: SignaturePadInvoiceProps) {
   const [showModal, setShowModal] = useState(false);
-  const [signatureType, setSignatureType] = useState<"type" | "draw">("type");
+  const [signatureType, setSignatureType] = useState<"draw" | "type">("draw");
   const [typedName, setTypedName] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
@@ -290,117 +290,117 @@ export default function SignaturePadInvoice({
       )}
 
       {/* Signature Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white rounded-xl w-full max-w-md p-5 shadow-lg border border-green-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base font-semibold mb-3 text-gray-900">
-              Customer Signature
-            </h3>
+  {showModal && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+    <div 
+      className="bg-white rounded-xl w-full max-w-md p-5 shadow-lg border border-green-100"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h3 className="text-base font-semibold mb-3 text-gray-900">
+        Customer Signature
+      </h3>
 
-            {/* Type Toggle */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setSignatureType("type")}
-                className={`flex-1 py-2 text-sm rounded-lg transition ${
-                  signatureType === "type"
-                    ? "text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-                style={
-                  signatureType === "type"
-                    ? { backgroundColor: BRAND_GREEN }
-                    : undefined
-                }
-              >
-                Type Name
-              </button>
+      {/* Toggle Buttons – Draw first, then Type */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setSignatureType("draw")}
+          className={`flex-1 py-2 text-sm rounded-lg transition ${
+            signatureType === "draw"
+              ? "text-white"
+              : "bg-gray-100 text-gray-600"
+          }`}
+          style={
+            signatureType === "draw"
+              ? { backgroundColor: BRAND_GREEN }
+              : undefined
+          }
+        >
+          Draw Signature
+        </button>
+        
+        <button
+          onClick={() => setSignatureType("type")}
+          className={`flex-1 py-2 text-sm rounded-lg transition ${
+            signatureType === "type"
+              ? "text-white"
+              : "bg-gray-100 text-gray-600"
+          }`}
+          style={
+            signatureType === "type"
+              ? { backgroundColor: BRAND_GREEN }
+              : undefined
+          }
+        >
+          Type Name
+        </button>
+      </div>
 
-              <button
-                onClick={() => setSignatureType("draw")}
-                className={`flex-1 py-2 text-sm rounded-lg transition ${
-                  signatureType === "draw"
-                    ? "text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-                style={
-                  signatureType === "draw"
-                    ? { backgroundColor: BRAND_GREEN }
-                    : undefined
-                }
-              >
-                Draw Signature
-              </button>
-            </div>
-
-            {/* Input Area */}
-            {signatureType === "type" ? (
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Type your full name"
-                  value={typedName}
-                  onChange={(e) => setTypedName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500/30"
-                  style={{ outlineColor: BRAND_GREEN }}
-                  autoFocus
-                />
-                <p className="text-[10px] text-gray-400 text-center">
-                  This will be used as your electronic signature
-                </p>
-              </div>
-            ) : (
-              <div 
-                className="border border-gray-200 rounded-lg overflow-hidden"
-                onTouchMove={(e) => e.preventDefault()}
-              >
-                <canvas
-                  ref={canvasRef}
-                  className="w-full bg-white touch-none"
-                  style={{ height: "150px", cursor: "crosshair" }}
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                />
-                <div className="flex justify-between items-center px-2 py-1 bg-gray-50">
-                  <button
-                    onClick={clearCanvas}
-                    className="text-xs text-red-500 hover:text-red-600"
-                  >
-                    Clear Canvas
-                  </button>
-                  <span className="text-[10px] text-gray-400">
-                    Sign in the box above
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="flex-1 py-2 text-sm rounded-lg text-white transition hover:brightness-110 active:scale-[0.98]"
-                style={{ backgroundColor: BRAND_GREEN }}
-              >
-                Save Signature
-              </button>
-            </div>
+      {/* Input Area */}
+      {signatureType === "type" ? (
+        <div className="space-y-2">
+          <input
+            type="text"
+            placeholder="Type your full name"
+            value={typedName}
+            onChange={(e) => setTypedName(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500/30"
+            style={{ outlineColor: BRAND_GREEN }}
+            autoFocus
+          />
+          <p className="text-[10px] text-gray-400 text-center">
+            This will be used as your electronic signature
+          </p>
+        </div>
+      ) : (
+        <div 
+          className="border border-gray-200 rounded-lg overflow-hidden"
+          onTouchMove={(e) => e.preventDefault()}
+        >
+          <canvas
+            ref={canvasRef}
+            className="w-full bg-white touch-none"
+            style={{ height: "150px", cursor: "crosshair" }}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+          />
+          <div className="flex justify-between items-center px-2 py-1 bg-gray-50">
+            <button
+              onClick={clearCanvas}
+              className="text-xs text-red-500 hover:text-red-600"
+            >
+              Clear Canvas
+            </button>
+            <span className="text-[10px] text-gray-400">
+              Sign in the box above
+            </span>
           </div>
         </div>
       )}
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={() => setShowModal(false)}
+          className="flex-1 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          className="flex-1 py-2 text-sm rounded-lg text-white transition hover:brightness-110 active:scale-[0.98]"
+          style={{ backgroundColor: BRAND_GREEN }}
+        >
+          Save Signature
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Remove Confirmation Modal */}
       {showRemoveConfirm && (

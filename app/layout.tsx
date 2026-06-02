@@ -1,4 +1,4 @@
-// app/layout.tsx (update the relevant sections)
+// app/layout.tsx
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -7,6 +7,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/ui/BottomNav";
 import SEO from "@/components/SEO";
+import { NotificationProvider } from "@/context/NotificationContext";
+import RealtimeNotificationListener from "@/components/RealtimeNotificationListener";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -126,13 +129,17 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://randomuser.me" />
       </head>
       <body className={`${inter.className} flex justify-center`} style={{ backgroundColor: "#000000ff" }}>
-        <SEO />
-        <div className="w-full min-h-screen relative flex justify-center">
-          <div className="w-full max-w-screen-2xl min-h-screen shadow-xl relative">
-            {children}
-            {showBottomNav && <BottomNav />}
+        <NotificationProvider>
+          <SEO />
+          <RealtimeNotificationListener />
+          <Toaster position="top-right" />
+          <div className="w-full min-h-screen relative flex justify-center">
+            <div className="w-full max-w-screen-2xl min-h-screen shadow-xl relative">
+              {children}
+              {showBottomNav && <BottomNav />}
+            </div>
           </div>
-        </div>
+        </NotificationProvider>
       </body>
     </html>
   );

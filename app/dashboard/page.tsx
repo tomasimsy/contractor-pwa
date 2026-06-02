@@ -9,10 +9,12 @@ import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import FinancialDashboard from "@/components/FinancialDashboard";
 import { Plus, FilePlus, FileText, AlertCircle, LogOut } from "lucide-react";
-import NotificationListener from "@/components/NotificationListener";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import NotificationBell from "@/components/NotificationBell";
+ 
 
-import { useRealTimeEstimates } from "@/lib/hooks/useRealTimeEstimates";
+//test
+import { useNotifications } from "@/context/NotificationContext";
 
 interface DashboardStats {
   estimates: number;
@@ -24,11 +26,10 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
+const { addNotification } = useNotifications(); // ✅ top level test
 
-   useRealTimeEstimates(); 
 
-
-  const router = useRouter();
+   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
@@ -125,9 +126,10 @@ export default function Dashboard() {
     );
   }
 
+
+  
   return (
     <ProtectedRoute>
-      <NotificationListener />
       <div className="min-h-screen bg-slate-50/60 pb-28 font-sans antialiased">
         {/* Sticky header */}
         <div className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
@@ -140,14 +142,20 @@ export default function Dashboard() {
                 <span className="text-xl font-medium tracking-tight text-slate-700">Pros</span>
               </div>
             </Link>
-            <button onClick={() => toast.success('Toast works!')}>Test Toast</button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
-            >
-              <LogOut size={13} />
-              <span>Logout</span>
-            </button>
+            <div className="flex items-center gap-3">
+               <button onClick={() => addNotification("Test", "This is a manual notification")}>
+      Test Notification
+    </button>
+              <NotificationBell />
+    
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+              >
+                <LogOut size={13} />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -277,7 +285,7 @@ export default function Dashboard() {
         </div>
 
         {/* Refined Speed Dial (FAB) */}
-<div className="fixed bottom-21 right-6 z-50">
+        <div className="fixed bottom-21 right-6 z-50">
           {/* Pop‑out menu */}
           <div
             className={`absolute bottom-16 right-0 flex flex-col items-end gap-2 transition-all duration-200 origin-bottom ${
@@ -289,7 +297,7 @@ export default function Dashboard() {
             onMouseLeave={() => setIsFabOpen(false)}
           >
             <div className="flex items-center gap-2">
-              <span className="bg-emerald-700 backdrop-blur-sm text-white text-[10px] font-bold tracking-wide px-2.5 py-1 rounded-md shadow-sm hover:bg-emerald-600 hover:text-white  transition">
+              <span className="bg-emerald-700 backdrop-blur-sm text-white text-[10px] font-bold tracking-wide px-2.5 py-1 rounded-md shadow-sm hover:bg-emerald-600 hover:text-white transition">
                 Invoices
               </span>
               <button
@@ -325,7 +333,6 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
-      
     </ProtectedRoute>
   );
 }

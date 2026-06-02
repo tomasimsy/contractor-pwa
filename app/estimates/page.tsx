@@ -16,6 +16,8 @@ export default function EstimatesPage() {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+    const [filter, setFilter] = useState<"all" | "signed" | "pending">("all");
+
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     id: "",
@@ -59,11 +61,24 @@ export default function EstimatesPage() {
   }, [loadEstimates]);
 
   // Client-side search matching client name or estimate identifier number
-  const filteredEstimates = estimates.filter((est) =>
+const filteredEstimates = estimates.filter((est) => {
+  const matchesSearch =
     est.clients?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    (est.estimate_number || est.id.slice(0, 8)).toString().includes(search)
-  );
+    (est.estimate_number || est.id.slice(0, 8))
+      .toString()
+      .includes(search);
 
+  const matchesFilter =
+    filter === "all"
+      ? true
+      : filter === "signed"
+      ? !!est.signature
+      : !est.signature;
+
+  return matchesSearch && matchesFilter;
+});
+
+  
   // 2. Optimistic UI update during deletion
   async function handleSoftDelete() {
     const targetId = deleteModal.id;
@@ -230,6 +245,41 @@ export default function EstimatesPage() {
           )}
 
           {/* ESTIMATES POPULATED ROW CONTENT LIST */}
+          {/* Category Filter Buttons */}
+<div className="mb-4 flex flex-wrap gap-2">
+  <button
+    onClick={() => setFilter("all")}
+    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+      filter === "all"
+        ? "bg-emerald-600 text-white"
+        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+    }`}
+  >
+    All ({estimates.length})
+  </button>
+
+  <button
+    onClick={() => setFilter("signed")}
+    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+      filter === "signed"
+        ? "bg-emerald-600 text-white"
+        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+    }`}
+  >
+    Signed ({estimates.filter((e) => e.signature).length})
+  </button>
+
+  <button
+    onClick={() => setFilter("pending")}
+    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+      filter === "pending"
+        ? "bg-emerald-600 text-white"
+        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+    }`}
+  >
+    Pending ({estimates.filter((e) => !e.signature).length})
+  </button>
+</div>
           <div className="space-y-2">
             {filteredEstimates.map((estimate, index) => {
               const status = getStatus(estimate);
