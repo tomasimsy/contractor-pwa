@@ -122,7 +122,7 @@ const [invoices, setInvoices] = useState<any[]>([]);
 
           </div>
           {/* Invoice Filters category */}
-<div className="fixed bottom-24 right-1 z-40 flex flex-col gap-2 items-end">
+<div className="fixed bottom-54 right-3 z-40 flex flex-col gap-2 items-end">
   <button
     onClick={() => setFilter("all")}
     className={`px-2 py-3 rounded-lg text-[12px] font-semibold shadow-md transition ${
