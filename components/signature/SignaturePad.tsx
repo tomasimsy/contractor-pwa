@@ -177,7 +177,7 @@ const handleRemoveClick = () => {
   <button
     type="button"
     onClick={handleRemoveClick}
-    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold shadow-sm"
+    className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 text-white text-[8px] font-bold shadow-sm"
     title="Remove Signature"
   >
     X

@@ -1144,7 +1144,8 @@ export default function EstimatePage() {
                 <span>{converting ? "Processing Ledger..." : "Convert Scope to Invoice Asset"}</span>
               </button>
             )}
-            {!isEditMode && estimate?.signature && estimate?.status !== "converted" && estimate?.status !== "completed" && (
+            {/* Mark as Completed button – visible unless already completed */}
+            {estimate?.status !== "completed" && (
               <button onClick={markAsCompleted} className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs flex items-center justify-center gap-1.5">
                 <span>Mark Project Cycle as Completed</span>
               </button>
