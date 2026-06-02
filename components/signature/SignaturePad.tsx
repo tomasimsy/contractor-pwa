@@ -7,13 +7,13 @@ import toast from "react-hot-toast";
 
 interface SignaturePadProps {
   onSave: (signature: Signature) => void;
-  onRemove?: (estimateId: string) => Promise<void>; // must handle DB update and call parent refresh
+  onRemove?: (estimateId: string) => Promise<void>;
   existingSignature?: Signature | null;
   buttonText?: string;
   showRemoveButton?: boolean;
   isCompleted?: boolean;
-  estimateId: string; // required for removal
-  onRefresh?: () => void; // optional refresh after removal
+  estimateId?: string;      // now optional
+  onRefresh?: () => void;   // now optional
 }
 
 const BRAND_GREEN = "#009966";
@@ -135,32 +135,36 @@ export default function SignaturePad({
 
   const handleRemoveClick = () => setShowRemoveConfirm(true);
 
-  const handleConfirmRemove = async () => {
-    setShowRemoveConfirm(false);
-    if (!onRemove) {
-      toast.error("Remove function not available", { duration: 3000 });
-      return;
-    }
-    try {
-      await onRemove(estimateId);
-      toast.success("Signature removed successfully", {
-        duration: 3000,
-        position: "top-center",
-        icon: "🗑️",
-        style: {
-          background: "#fef3c7",
-          color: "#92400e",
-          border: "1px solid #fbbf24",
-          padding: "6px 12px",
-          fontSize: "12px",
-        },
-      });
-      if (onRefresh) onRefresh();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to remove signature", { duration: 3000 });
-    }
-  };
+const handleConfirmRemove = async () => {
+  setShowRemoveConfirm(false);
+  if (!onRemove) {
+    toast.error("Remove function not available", { duration: 3000 });
+    return;
+  }
+  if (!estimateId) {
+    toast.error("Estimate ID missing", { duration: 3000 });
+    return;
+  }
+  try {
+    await onRemove(estimateId); // now TypeScript knows estimateId is string
+    toast.success("Signature removed successfully", {
+      duration: 3000,
+      position: "top-center",
+      icon: "🗑️",
+      style: {
+        background: "#fef3c7",
+        color: "#92400e",
+        border: "1px solid #fbbf24",
+        padding: "6px 12px",
+        fontSize: "12px",
+      },
+    });
+    if (onRefresh) onRefresh();
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to remove signature", { duration: 3000 });
+  }
+};
 
   // Existing signature view
   if (existingSignature) {

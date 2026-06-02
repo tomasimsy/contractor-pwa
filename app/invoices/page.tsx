@@ -142,7 +142,7 @@ const copyLink = (inv: any) => {
     className={`px-2 py-3 rounded-lg text-[12px] font-semibold shadow-md transition ${
       filter === "all"
         ? "bg-emerald-600 text-white"
-        : "bg-white border border-slate-200 text-slate-600"
+        : "bg-white border border-emerald-400 text-slate-600 hover:bg-emerald-50 hover:text-slate-800"
     }`}
     style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
   >
@@ -154,7 +154,7 @@ const copyLink = (inv: any) => {
     className={`px-2 py-3 rounded-lg text-[12px] font-semibold shadow-md transition ${
       filter === "pending"
         ? "bg-emerald-600 text-white"
-        : "bg-white border border-slate-200 text-slate-600"
+        : "bg-white border border-emerald-400  text-slate-600 hover:bg-emerald-50 hover:text-slate-800"
     }`}
     style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
   >
@@ -166,7 +166,7 @@ const copyLink = (inv: any) => {
     className={`px-2 py-3 rounded-lg text-[12px] font-semibold shadow-md transition ${
       filter === "paid"
         ? "bg-emerald-600 text-white"
-        : "bg-white border border-slate-200 text-slate-600"
+        : "bg-white border border-emerald-400  text-slate-600 hover:bg-emerald-50 hover:text-slate-800"
     }`}
     style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
   >
