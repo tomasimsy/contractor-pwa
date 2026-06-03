@@ -26,7 +26,7 @@ export default function NotificationBell() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
               <span className="text-xs font-bold text-slate-700">Notifications</span>
               {unreadCount > 0 && (
