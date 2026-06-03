@@ -353,73 +353,52 @@ const confirmApprove = async () => {
             <div className="text-[10px] text-slate-400 space-y-0.5">
               {client?.phone && <p>📞 {client.phone}</p>}
               {client?.email && <p className="lowercase truncate">✉ {client.email}</p>}
+               #{estimate?.estimate_number || id?.slice(0, 6)}
             </div>
           </div>
         </div>
 
-        {/* Project Scope Card */}
-        <div className="bg-white rounded-xl border-2 border-slate-900/10 shadow-md overflow-hidden">
-          <div className="px-4 py-3 border-b-2 border-slate-100 bg-slate-900 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <h3 className="text-[10px] font-extrabold text-white uppercase tracking-wider">Project Scope & Estimate</h3>
-            </div>
-            <span className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded font-mono font-bold">
-              #{estimate?.estimate_number || id?.slice(0, 6)}
-            </span>
-          </div>
-          <div className="p-4 space-y-4">
-            {estimate?.description && (
-              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200/60 relative">
-                <div className="absolute top-0 left-0 bottom-0 w-1 bg-slate-400" />
-                <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Project Objective</span>
-                <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line capitalize font-medium">
-                  {estimate.description}
-                </p>
-              </div>
-            )}
-            {items.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-1">
-                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Line Items</span>
-                  <span className="text-[9px] text-slate-500 font-bold bg-slate-100 px-1.5 py-0.5 rounded">
-                    {items.length} Item{items.length === 1 ? '' : 's'}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {items.map((item, idx) => (
-                    <div key={item.id} className="bg-white border border-slate-200/80 rounded-lg px-2.5 py-1.5 flex justify-between items-center gap-3">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="text-[9px] font-mono font-bold text-slate-300 shrink-0">{String(idx + 1).padStart(2, '0')}</span>
-                        <div className="min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-2 flex-1">
-                          <h4 className="text-[11px] font-bold text-slate-800 capitalize truncate">{item.name}</h4>
-                          <div className="text-[10px] font-medium text-slate-500 flex items-center gap-1">
-                            <span className="bg-slate-50 border border-slate-100 px-1 rounded text-slate-600 font-bold text-[9px]">{item.quantity} Qty</span>
-                            <span className="text-slate-300 font-light">×</span>
-                            <span className="font-mono text-slate-400">{formatCurrency(item.unit_price)}</span>
-                          </div>
-                          {item.description && <span className="text-[10px] text-slate-400 truncate italic hidden sm:inline">— {item.description}</span>}
-                        </div>
-                      </div>
-                      <div className="text-right text-[11px] font-black font-mono text-slate-900 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md">
-                        {formatCurrency(item.total)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {estimate?.notes && (
-              <div className="text-[11px] text-amber-800 bg-amber-50/40 border border-amber-200/70 rounded-lg p-3 flex items-start gap-2">
-                <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0 mt-1" />
-                <div className="flex-1">
-                  <span className="font-extrabold text-[9px] uppercase block mb-0.5 tracking-wide text-amber-900">Terms & Notes</span>
-                  <p className="font-medium italic">{estimate.notes}</p>
-                </div>
-              </div>
-            )}
-          </div>
+{/* Project Scope Card with Connector */}
+<div className="bg-white rounded-xl border-2 border-slate-900/10 shadow-md overflow-hidden relative">
+  {/* Optional header (empty, kept for border) */}
+  <div className="px-4 border-b-2 border-slate-100 bg-emerald-600 h-2"></div>
+
+  {/* Content container with relative positioning for the connector line */}
+  <div className="relative pl-6 py-4 space-y-6">
+    {/* Vertical dotted connector line */}
+    <div className="absolute left-3 top-8 bottom-8 w-px border-l-2 border-dotted border-amber-400 pointer-events-none"></div>
+
+    {/* Project Objective */}
+    {estimate?.description && (
+      <div className="relative">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0 z-10 relative" />
+          <span className="text-[9px] font-extrabold text-amber-900 uppercase tracking-wider">
+            Project Objective
+          </span>
         </div>
+        <p className="text-xs italic leading-relaxed whitespace-pre-line capitalize font-medium bg-amber-50/40 border border-amber-200/70 rounded-lg p-3 text-amber-800 ml-4">
+          {estimate.description}
+        </p>
+      </div>
+    )}
+
+    {/* Terms & Notes */}
+    {estimate?.notes && (
+      <div className="relative">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0 z-10 relative" />
+          <span className="font-extrabold text-[9px] uppercase tracking-wide text-amber-900">
+            Terms & Notes
+          </span>
+        </div>
+        <div className="text-[11px] text-amber-800 bg-amber-50/40 border border-amber-200/70 rounded-lg p-3 ml-4">
+          <p className="font-medium italic">{estimate.notes}</p>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
 
         {/* Change Orders Section */}
         {changeOrders.length > 0 && (
@@ -427,7 +406,7 @@ const confirmApprove = async () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-                <h3 className="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider">Scope Variations</h3>
+                <h3 className="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider">Change Order</h3>
               </div>
               <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
                 {changeOrders.length} {changeOrders.length === 1 ? 'Order' : 'Orders'}
@@ -509,24 +488,28 @@ const confirmApprove = async () => {
         </div>
 
         {/* Payment History */}
-        {payments.length > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200/60 bg-amber-50/40 shadow-sm overflow-hidden">
-            <div className="px-4 py-2 border-b border-slate-100 bg-amber-50/40">
-              <span className="text-[10px] font-extrabold text-amber-900 uppercase tracking-wider">Payment History</span>
-            </div>
-            <div className="divide-y divide-slate-100 bg-amber-50/40">
-              {payments.map((p) => (
-                <div key={p.id} className="px-4 py-2.5 flex items-center gap-2">
-                  <Receipt size={14} className="text-emerald-500" />
-                  <div>
-                    <div className="text-xs font-bold text-amber-900">{formatCurrency(p.amount)}</div>
-                    <div className="text-[10px] text-amber-900 capitalize">{p.method} • {new Date(p.created_at).toLocaleDateString()}</div>
-                  </div>
-                </div>
-              ))}
+{payments.length > 0 && (
+  <div className="bg-white rounded-xl border border-slate-200/60 bg-amber-50/40 shadow-sm overflow-hidden">
+    <div className="px-4 py-2 border-b border-slate-100 bg-amber-50/40 text-right">
+      <span className="text-[10px] font-extrabold text-amber-900 uppercase tracking-wider">
+        Payment History
+      </span>
+    </div>
+    <div className="divide-y divide-slate-100 bg-amber-50/40">
+      {payments.map((p) => (
+        <div key={p.id} className="px-4 py-2.5 flex justify-end items-right gap-2">
+          {/* <Receipt size={14} className="text-emerald-500 shrink-0" /> */}
+          <div className="text-right">
+            <div className="text-xs font-bold text-amber-900">{formatCurrency(p.amount)}</div>
+            <div className="text-[10px] text-amber-900 capitalize">
+              {p.method} • {new Date(p.created_at).toLocaleDateString()}
             </div>
           </div>
-        )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
         {/* Signature Block */}
         <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-4">

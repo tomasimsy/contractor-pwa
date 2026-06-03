@@ -213,7 +213,7 @@ export default function SignaturePadInvoice({
       <TermsAndConditions />
       
       <h3 className="text-sm font-semibold text-gray-700 mb-3">
-        Customer Signature
+        {/* Customer Signature */}
       </h3>
 
 
