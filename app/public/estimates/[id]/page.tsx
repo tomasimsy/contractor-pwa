@@ -389,7 +389,7 @@ const confirmApprove = async () => {
         <div className="flex items-center gap-2 mb-2">
           <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0 z-10 relative" />
           <span className="font-extrabold text-[9px] uppercase tracking-wide text-amber-900">
-            Terms & Notes
+            Notes
           </span>
         </div>
         <div className="text-[11px] text-amber-800 bg-amber-50/40 border border-amber-200/70 rounded-lg p-3 ml-4">
