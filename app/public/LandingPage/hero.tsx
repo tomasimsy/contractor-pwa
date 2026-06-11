@@ -108,7 +108,7 @@ return (
 
         {/* Trust strip — social proof above CTA */}
         <div className="flex items-center gap-6 text-[10px] uppercase tracking-[0.15em] text-white/40">
-          <span>Licensed & Insured</span>
+          <span>Experienced & Insured</span>
           <span className="h-3 w-px bg-white/20" />
           <span>Free Estimates</span>
         </div>
