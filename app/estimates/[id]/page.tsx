@@ -897,18 +897,18 @@ const overallTotal = useMemo(() => {
     <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/60 border border-emerald-900/50 px-2 py-0.5 rounded font-mono tracking-tight shrink-0">
       STAGE {String(projectIdx + 1).padStart(2, '0')}
     </span>
-    <input
-      type="text"
-      value={project.name}
-      onChange={(e) => updateProject(project.id, "name", e.target.value)}
-      placeholder="Name this project stage..."
-      className={`flex-1 text-white placeholder:text-slate-600 text-xs font-black focus:outline-none truncate py-0.5 disabled:opacity-100 ${
-        isEditMode
-          ? "bg-slate-500/60 border border-slate-700/40 rounded-lg px-2.5 py-1 focus:border-slate-500 focus:ring-1 focus:ring-slate-500/30 transition-all"
-          : "bg-transparent"
-      }`}
-      disabled={!isEditMode}
-    />
+<input
+  type="text"
+  value={project.name}
+  onChange={(e) => updateProject(project.id, "name", e.target.value)}
+  placeholder="Name this project stage..."
+  className={`flex-1 text-white placeholder:text-slate-500 text-xs font-black focus:outline-none truncate ${
+    isEditMode
+      ? "bg-slate-700/80 border border-slate-600/60 rounded-lg px-2.5 py-1.5 focus:border-slate-400 focus:ring-1 focus:ring-slate-400/40 transition-all"
+      : "bg-transparent"
+  }`}
+  disabled={!isEditMode}
+/>
   </div>
   {isEditMode && editProjects.length > 1 && (
     <button onClick={() => removeProject(project.id)} className="text-slate-500 hover:text-rose-400 p-1 transition-colors rounded-lg hover:bg-white/5">
