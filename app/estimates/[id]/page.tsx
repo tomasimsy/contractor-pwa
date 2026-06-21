@@ -904,7 +904,7 @@ const overallTotal = useMemo(() => {
   placeholder="Name this project stage..."
   className={`flex-1 text-white placeholder:text-slate-500 text-xs font-black focus:outline-none truncate ${
     isEditMode
-      ? "bg-slate-700/80 border border-slate-600/60 rounded-lg px-2.5 py-1.5 focus:border-slate-400 focus:ring-1 focus:ring-slate-400/40 transition-all"
+      ? "bg-slate-500/60 border border-slate-600/60 rounded-lg px-3.5 py-1.5 focus:border-slate-200 focus:ring-1 focus:ring-slate-300/40 transition-all"
       : "bg-transparent"
   }`}
   disabled={!isEditMode}
