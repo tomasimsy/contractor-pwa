@@ -13,6 +13,7 @@ import {
 import { formatCurrency } from "@/lib/utils/formatting";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { generateEstimateNumber } from "@/lib/utils/estimateNumber";
+import toast from "react-hot-toast";
 
 type Project = {
   id: string;
@@ -85,7 +86,7 @@ export default function CreateEstimate() {
 
   const distributeToTargetTotal = () => {
     if (!targetTotal || targetTotal <= 0) {
-      alert("Please enter a valid target total");
+      toast.error("Please enter a valid target total");
       return;
     }
 
@@ -93,14 +94,14 @@ export default function CreateEstimate() {
     const difference = targetTotal - currentTotal;
     
     if (difference === 0) {
-      alert("Target total is already equal to current total");
+      toast('Target total is already equal to current total', { icon: 'ℹ️' });
       return;
     }
 
     const allLineItems = projects.flatMap(p => p.items);
     
     if (allLineItems.length === 0) {
-      alert("No items to distribute to");
+      toast.error("No items to distribute to");
       return;
     }
 
@@ -121,7 +122,7 @@ export default function CreateEstimate() {
     setProjects(updatedProjects);
     setTargetTotal(null);
     setShowTargetModal(false);
-    alert(`Total updated to ${formatCurrency(targetTotal)}`);
+    toast.success(`Total updated to ${formatCurrency(targetTotal)}`);
   };
 
   const addProject = () => {
@@ -189,13 +190,15 @@ export default function CreateEstimate() {
 
   const saveEstimate = async () => {
     if (!clientId) {
-      return alert("Select a client");
+      toast.error("Please select a client");
+      return;
     }
 
     if (projects.some((project) =>
       project.items.some((item) => !item.name.trim())
     )) {
-      return alert("Name all line items");
+      toast.error("All line items must have a name");
+      return;
     }
 
     const estimateNumber = await generateEstimateNumber();
@@ -216,7 +219,7 @@ export default function CreateEstimate() {
       .single();
 
     if (error) {
-      alert("Error: " + error.message);
+      toast.error("Error creating estimate: " + error.message);
       setSaving(false);
       return;
     }
@@ -242,9 +245,9 @@ export default function CreateEstimate() {
 
     if (itemsError) {
       console.error(itemsError);
-      alert(itemsError.message);
+      toast.error("Error saving items: " + itemsError.message);
     } else {
-      alert(`Estimate #${estimateNumber} created!`);
+      toast.success(`Estimate #${estimateNumber} created!`);
       router.push(`/estimates/${estimate.id}`);
     }
 

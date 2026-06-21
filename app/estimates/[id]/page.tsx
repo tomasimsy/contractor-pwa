@@ -13,6 +13,7 @@ import { SquarePen, Send, FileText, Users, Receipt, DollarSign, Plus, FileEdit, 
 import toast from "react-hot-toast";
 import ProgressModal from "@/components/progress/ProgressModal";
 import ProgressDisplay from "@/components/progress/ProgressDisplay";
+import ClientSelector from "@/components/forms/ClientSelector"; // <-- ADD AT TOP (kept but not used)
 
 
 type ProjectWithItems = {
@@ -68,6 +69,9 @@ const [progressRefresh, setProgressRefresh] = useState(0);
   const [existingInvoiceId, setExistingInvoiceId] = useState<string | null>(null);
   const fabRef = useRef<HTMLDivElement>(null);
 
+
+
+
   // Progress display state
   const [setProjectsList] = useState<{ name: string }[]>([]);
  
@@ -77,6 +81,7 @@ const [progressRefresh, setProgressRefresh] = useState(0);
   const [showChangeOrderModal, setShowChangeOrderModal] = useState(false);
   const [editingChangeOrder, setEditingChangeOrder] = useState<ChangeOrder | null>(null);
 
+ 
   // Change orders
   const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([]);
   const [changeOrdersTotal, setChangeOrdersTotal] = useState(0);
@@ -101,6 +106,10 @@ const [progressRefresh, setProgressRefresh] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);
   const [lastAddedItemId, setLastAddedItemId] = useState<string | null>(null);
   const newItemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [editClientId, setEditClientId] = useState<string>(""); // <-- ADD THIS
+
+  // ---------- NEW: Client list for dropdown ----------
+  const [clientList, setClientList] = useState<{ id: string; name: string }[]>([]);
 
   // ---------- New financial summary data ----------
   const [originalSubtotal, setOriginalSubtotal] = useState(0);
@@ -108,6 +117,9 @@ const [progressRefresh, setProgressRefresh] = useState(0);
   const [depositAmount, setDepositAmount] = useState(0);
   const [totalPaid, setTotalPaid] = useState(0);
   const [remainingBalance, setRemainingBalance] = useState(0);
+
+
+
 
   const projectsList = useMemo(() => {
   return projects.map(p => ({ name: p.name }));
@@ -121,6 +133,18 @@ const [progressRefresh, setProgressRefresh] = useState(0);
     loadChangeOrders();
     loadPayments(); // load payments if any
   }, [id]);
+
+  // ---------- Fetch client list ----------
+  useEffect(() => {
+    const fetchClients = async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name")
+        .order("name", { ascending: true });
+      if (!error && data) setClientList(data);
+    };
+    fetchClients();
+  }, []);
 
   useEffect(() => {
     const checkExistingInvoice = async () => {
@@ -218,6 +242,7 @@ const [progressRefresh, setProgressRefresh] = useState(0);
           .eq("id", est.client_id)
           .single();
         setClient(c);
+        setEditClientId(est.client_id); // <-- ADD THIS
       }
 
       const { data: items } = await supabase
@@ -584,44 +609,49 @@ const overallTotal = useMemo(() => {
     total: 0,
   });
 
-  const distributeToTargetTotal = () => {
-    if (!targetTotal || targetTotal <= 0) {
-      toast.error("Please enter a valid target total");
-      return;
-    }
-    const currentTotal = editSubtotal;
-    const difference = targetTotal - currentTotal;
-    if (difference === 0) {
-       toast(`Target total is already equal to current total`, {
-        icon: "ℹ️",
-        style: {
-          background: "#e0f2fe",
-          color: "#0369a1",
-          border: "1px solid #7dd3fc",
-          padding: "6px 12px",
-          fontSize: "12px",
-        },
-      });
-      return;
-    }
-    const allLineItems = editProjects.flatMap((p) => p.items);
-    if (allLineItems.length === 0) {
-      toast.error("No items to distribute to");
-      return;
-    }
-    const distributionPerItem = difference / allLineItems.length;
-    const updatedProjects = editProjects.map((p) => ({
-      ...p,
-      items: p.items.map((item) => {
-        const newUnitPrice = Math.max(0, item.unit_price + distributionPerItem);
-        return { ...item, unit_price: newUnitPrice, total: item.quantity * newUnitPrice };
-      }),
-    }));
-    setEditProjects(updatedProjects);
-    setTargetTotal(null);
-    setShowTargetModal(false);
-    toast.success(`Total updated to ${formatCurrency(targetTotal)}`);
-  };
+const distributeToTargetTotal = async () => {
+  if (!targetTotal || targetTotal <= 0) {
+    toast.error("Please enter a valid target total");
+    return;
+  }
+
+  const currentTotal = editSubtotal;
+  const difference = targetTotal - currentTotal;
+
+  if (difference === 0) {
+    toast("Target total is already equal to current total", { icon: "ℹ️" });
+    return;
+  }
+
+  const allLineItems = editProjects.flatMap((p) => p.items);
+  if (allLineItems.length === 0) {
+    toast.error("No items to distribute to");
+    return;
+  }
+
+  const distributionPerItem = difference / allLineItems.length;
+
+  const updatedProjects = editProjects.map((project) => ({
+    ...project,
+    items: project.items.map((item) => {
+      const newUnitPrice = Math.max(0, item.unit_price + distributionPerItem);
+      return {
+        ...item,
+        unit_price: newUnitPrice,
+        total: item.quantity * newUnitPrice,
+      };
+    }),
+  }));
+
+  // Update local state
+  setEditProjects(updatedProjects);
+  setTargetTotal(null);
+  setShowTargetModal(false);
+  toast.success(`Total updated to ${formatCurrency(targetTotal)}`);
+
+  // Save the updated projects to database
+  await saveEdit(updatedProjects);
+};
 
   const addProject = () => {
     setEditProjects((prev) => [...prev, { id: crypto.randomUUID(), name: "", description: "", items: [createEmptyItem()] }]);
@@ -636,56 +666,60 @@ const overallTotal = useMemo(() => {
     setEditProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, [field]: value } : p)));
   };
 
-  const saveEdit = async () => {
-    setSaving(true);
-    try {
-      const allItems = editProjects.flatMap((p) => p.items);
-      const subtotal = calculateSubtotal(allItems);
-      const tax = calculateTax(subtotal, editTaxRate);
-      const total = calculateTotal(subtotal, editMarkup, editDiscount, tax);
+const saveEdit = async (projectsToSave?: ProjectWithItems[]) => {
+  const projects = projectsToSave || editProjects;
+  setSaving(true);
+  try {
+    const allItems = projects.flatMap((p) => p.items);
+    const subtotal = calculateSubtotal(allItems);
+    const tax = calculateTax(subtotal, editTaxRate);
+    const total = calculateTotal(subtotal, editMarkup, editDiscount, tax);
 
-      const { error: updateError } = await supabase
-        .from("estimates")
-        .update({
-          description: editDescription || null,
-          notes: editNotes || null,
-          markup: editMarkup,
-          discount: editDiscount,
-          tax_rate: editTaxRate,
-          subtotal,
-          total,
-        })
-        .eq("id", id);
-      if (updateError) throw updateError;
+    const { error: updateError } = await supabase
+      .from("estimates")
+      .update({
+         client_id: editClientId,
+        description: editDescription || null,
+        notes: editNotes || null,
+        markup: editMarkup,
+        discount: editDiscount,
+        tax_rate: editTaxRate,
+        subtotal,
+        total,
+      })
+      .eq("id", id);
+    if (updateError) throw updateError;
 
-      await supabase.from("estimate_items").delete().eq("estimate_id", id);
-      const itemsToInsert = editProjects.flatMap((p) =>
-        p.items.map((item) => ({
-          estimate_id: id,
-          project_name: p.name,
-          category: item.category,
-          name: item.name,
-          description: item.description || null,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          taxable: item.taxable,
-          total: item.quantity * item.unit_price,
-        }))
-      );
-      if (itemsToInsert.length) {
-        const { error: itemsError } = await supabase.from("estimate_items").insert(itemsToInsert);
-        if (itemsError) throw itemsError;
-      }
-      toast.success("Estimate updated successfully!");
-      setIsEditMode(false);
-      loadEstimate();
-    } catch (err) {
-      console.error(err);
-      toast.error("Error saving changes");
-    } finally {
-      setSaving(false);
+    await supabase.from("estimate_items").delete().eq("estimate_id", id);
+    const itemsToInsert = projects.flatMap((p) =>
+      p.items.map((item) => ({
+        estimate_id: id,
+        project_name: p.name,
+        category: item.category,
+        name: item.name,
+        description: item.description || null,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        taxable: item.taxable,
+        total: item.quantity * item.unit_price,
+      }))
+    );
+    if (itemsToInsert.length) {
+      const { error: itemsError } = await supabase.from("estimate_items").insert(itemsToInsert);
+      if (itemsError) throw itemsError;
     }
-  };
+
+    toast.success("Estimate updated successfully!");
+    setIsEditMode(false);
+    setEditProjects(projects); // keep state in sync
+    loadEstimate(); // reload to fetch updated values
+  } catch (err) {
+    console.error(err);
+    toast.error("Error saving changes");
+  } finally {
+    setSaving(false);
+  }
+};
 
   // Calculations
   const viewSubtotal = calculateSubtotal(projects.flatMap((p) => p.items));
@@ -696,6 +730,12 @@ const overallTotal = useMemo(() => {
   const editSubtotal = calculateSubtotal(editAllItems);
   const editTax = calculateTax(editSubtotal, editTaxRate);
   const editTotal = calculateTotal(editSubtotal, editMarkup, editDiscount, editTax);
+
+    // Current financial summary (based on edit mode or persisted)
+const currentSubtotal = isEditMode ? editSubtotal : originalSubtotal;
+const currentRevisedTotal = isEditMode ? editTotal + changeOrdersTotal : revisedTotal;
+const currentRemainingBalance = currentRevisedTotal - totalPaid;
+const currentDepositAmount = currentRevisedTotal * 0.5;
 
   const sendSMSLink = async () => {
     let currentClient = client;
@@ -804,14 +844,31 @@ const overallTotal = useMemo(() => {
                 <ArrowLeft size={14} />
               </button>
               <div className="min-w-0">
-                <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Customer</span>
-                <h3 className="text-xs font-black text-slate-800 tracking-tight truncate">
-                  {client?.name || "Unassigned Account"}
-                </h3>
-                {client?.email && (
-                  <p className="text-[10px] text-slate-400 font-medium truncate hidden sm:block mt-0.5">{client.email}</p>
-                )}
-              </div>
+  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Customer</span>
+  {isEditMode ? (
+<select
+  value={editClientId}
+  onChange={(e) => setEditClientId(e.target.value)}
+  className="w-full bg-emerald-700/80 border border-emerald-600 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white placeholder:text-slate-300 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40 transition-all"
+>
+  <option value="">Select a client…</option>
+  {clientList.map((c) => (
+    <option key={c.id} value={c.id}>
+      {c.name}
+    </option>
+  ))}
+</select>
+  ) : (
+    <>
+      <h3 className="text-xs font-black text-slate-800 tracking-tight truncate">
+        {client?.name || "Unassigned Account"}
+      </h3>
+      {client?.email && (
+        <p className="text-[10px] text-slate-400 font-medium truncate hidden sm:block mt-0.5">{client.email}</p>
+      )}
+    </>
+  )}
+</div>
             </div>
             <div className="flex items-center justify-between gap-3 min-w-0 justify-self-end w-full max-w-[180px] sm:max-w-none">
               <div className="min-w-0 text-left sm:text-right sm:ml-auto">
@@ -846,7 +903,7 @@ const overallTotal = useMemo(() => {
               </div>
               <div className="flex gap-1.5 shrink-0 scale-95 origin-right">
                 <button onClick={() => setIsEditMode(false)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-3xs">Cancel</button>
-                <button onClick={saveEdit} disabled={saving} className="rounded-lg bg-slate-950 px-3 py-1 text-[11px] font-black text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-sm">{saving ? "Saving..." : "Apply"}</button>
+                <button onClick={() => saveEdit()} disabled={saving} className="rounded-lg bg-slate-950 px-3 py-1 text-[11px] font-black text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-sm">{saving ? "Saving..." : "Apply"}</button>
               </div>
             </div>
           )}
@@ -1107,49 +1164,49 @@ const overallTotal = useMemo(() => {
         )}
 
         {/* ========== NEW FINANCIAL SUMMARY CARD (with deposit & payment history) ========== */}
-        <div className="bg-slate-900 text-white rounded-xl p-4 shadow-md border border-slate-950 flex flex-col gap-3 relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-36 w-36 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex-1 text-xs space-y-1.5">
-            <div className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-slate-800 pb-1.5 mb-1.5 flex justify-between items-center">
-              <span>Financial Summary</span>
-              {isEditMode && (
-                <button onClick={() => setShowTargetModal(true)} className="text-[9px] font-extrabold text-emerald-400 underline hover:text-emerald-300 flex items-center gap-0.5">
-                  🎯 Set Target Total
-                </button>
-              )}
-            </div>
-            <div className="space-y-1 font-mono text-slate-400 text-[11px]">
-              <div className="flex justify-between">
-                <span>Original Estimate Subtotal</span>
-                <span className="text-slate-200">{formatCurrency(originalSubtotal)}</span>
-              </div>
-              {changeOrdersTotal !== 0 && (
-                <div className="flex justify-between text-blue-400">
-                  <span>Approved Change Orders</span>
-                  <span>+{formatCurrency(changeOrdersTotal)}</span>
-                </div>
-              )}
-              <div className="flex justify-between border-t border-slate-700 pt-1 mt-1">
-                <span><strong>Revised Total</strong></span>
-                <span className="text-slate-200 font-semibold">{formatCurrency(revisedTotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Deposit (50% of Revised Total)</span>
-                <span className="text-emerald-300">{formatCurrency(depositAmount)}</span>
-              </div>
-              {totalPaid > 0 && (
-                <div className="flex justify-between text-emerald-400">
-                  <span>Payments Received</span>
-                  <span>-{formatCurrency(totalPaid)}</span>
-                </div>
-              )}
-              <div className="flex justify-between border-t border-slate-800 pt-1 mt-1 text-sm font-bold">
-                <span>Current Balance Due</span>
-                <span className="text-white">{formatCurrency(remainingBalance)}</span>
-              </div>
-            </div>
-          </div>
+<div className="bg-slate-900 text-white rounded-xl p-4 shadow-md border border-slate-950 flex flex-col gap-3 relative overflow-hidden">
+  <div className="absolute top-0 right-0 h-36 w-36 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
+  <div className="flex-1 text-xs space-y-1.5">
+    <div className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-slate-800 pb-1.5 mb-1.5 flex justify-between items-center">
+      <span>Financial Summary</span>
+      {isEditMode && (
+        <button onClick={() => setShowTargetModal(true)} className="text-[9px] font-extrabold text-emerald-400 underline hover:text-emerald-300 flex items-center gap-0.5">
+          🎯 Set Target Total
+        </button>
+      )}
+    </div>
+    <div className="space-y-1 font-mono text-slate-400 text-[11px]">
+      <div className="flex justify-between">
+        <span>Original Estimate Subtotal</span>
+        <span className="text-slate-200">{formatCurrency(currentSubtotal)}</span>
+      </div>
+      {changeOrdersTotal !== 0 && (
+        <div className="flex justify-between text-blue-400">
+          <span>Approved Change Orders</span>
+          <span>+{formatCurrency(changeOrdersTotal)}</span>
         </div>
+      )}
+      <div className="flex justify-between border-t border-slate-700 pt-1 mt-1">
+        <span><strong>Revised Total</strong></span>
+        <span className="text-slate-200 font-semibold">{formatCurrency(currentRevisedTotal)}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>Deposit (50% of Revised Total)</span>
+        <span className="text-emerald-300">{formatCurrency(currentDepositAmount)}</span>
+      </div>
+      {totalPaid > 0 && (
+        <div className="flex justify-between text-emerald-400">
+          <span>Payments Received</span>
+          <span>-{formatCurrency(totalPaid)}</span>
+        </div>
+      )}
+      <div className="flex justify-between border-t border-slate-800 pt-1 mt-1 text-sm font-bold">
+        <span>Current Balance Due</span>
+        <span className="text-white">{formatCurrency(currentRemainingBalance)}</span>
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* Payment History Section (if any payments exist) */}
         {payments.length > 0 && (
