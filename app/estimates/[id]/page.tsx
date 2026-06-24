@@ -69,8 +69,8 @@ const [progressRefresh, setProgressRefresh] = useState(0);
   const [existingInvoiceId, setExistingInvoiceId] = useState<string | null>(null);
   const fabRef = useRef<HTMLDivElement>(null);
 
-
-
+// 
+const [pendingChangeOrdersTotal, setPendingChangeOrdersTotal] = useState(0);
 
   // Progress display state
   const [setProjectsList] = useState<{ name: string }[]>([]);
@@ -203,22 +203,28 @@ const [progressRefresh, setProgressRefresh] = useState(0);
     }
   }
 
-  async function loadChangeOrders() {
-    const { data, error } = await supabase
-      .from("change_orders")
-      .select("*")
-      .eq("estimate_id", id)
-      .order("created_at", { ascending: false });
-    if (error) {
-      console.error("Error loading change orders:", error);
-      return;
-    }
-    setChangeOrders(data || []);
-    const approvedTotal = (data || [])
-      .filter(co => co.status === "approved")
-      .reduce((sum, co) => sum + (co.total_amount || 0), 0);
-    setChangeOrdersTotal(approvedTotal);
+async function loadChangeOrders() {
+  const { data, error } = await supabase
+    .from("change_orders")
+    .select("*")
+    .eq("estimate_id", id)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Error loading change orders:", error);
+    return;
   }
+  setChangeOrders(data || []);
+  const approvedTotal = (data || [])
+    .filter(co => co.status === "approved")
+    .reduce((sum, co) => sum + (co.total_amount || 0), 0);
+  const pendingTotal = (data || [])
+    .filter(co => co.status === "draft" || co.status === "pending")
+    .reduce((sum, co) => sum + (co.total_amount || 0), 0);
+  setChangeOrdersTotal(approvedTotal);
+  setPendingChangeOrdersTotal(pendingTotal);
+}
+
+
 
   async function loadEstimate() {
     try {
@@ -1175,36 +1181,50 @@ const currentDepositAmount = currentRevisedTotal * 0.5;
         </button>
       )}
     </div>
-    <div className="space-y-1 font-mono text-slate-400 text-[11px]">
-      <div className="flex justify-between">
-        <span>Original Estimate Subtotal</span>
-        <span className="text-slate-200">{formatCurrency(currentSubtotal)}</span>
-      </div>
-      {changeOrdersTotal !== 0 && (
-        <div className="flex justify-between text-blue-400">
-          <span>Approved Change Orders</span>
-          <span>+{formatCurrency(changeOrdersTotal)}</span>
-        </div>
-      )}
-      <div className="flex justify-between border-t border-slate-700 pt-1 mt-1">
-        <span><strong>Revised Total</strong></span>
-        <span className="text-slate-200 font-semibold">{formatCurrency(currentRevisedTotal)}</span>
-      </div>
-      <div className="flex justify-between">
-        <span>Deposit (50% of Revised Total)</span>
-        <span className="text-emerald-300">{formatCurrency(currentDepositAmount)}</span>
-      </div>
-      {totalPaid > 0 && (
-        <div className="flex justify-between text-emerald-400">
-          <span>Payments Received</span>
-          <span>-{formatCurrency(totalPaid)}</span>
-        </div>
-      )}
-      <div className="flex justify-between border-t border-slate-800 pt-1 mt-1 text-sm font-bold">
-        <span>Current Balance Due</span>
-        <span className="text-white">{formatCurrency(currentRemainingBalance)}</span>
-      </div>
+<div className="space-y-1 font-mono text-slate-400 text-[11px]">
+  <div className="flex justify-between">
+    <span>Original Estimate Subtotal</span>
+    <span className="text-slate-200">{formatCurrency(currentSubtotal)}</span>
+  </div>
+  {changeOrdersTotal !== 0 && (
+    <div className="flex justify-between text-blue-400">
+      <span>Approved Change Orders</span>
+      <span>+{formatCurrency(changeOrdersTotal)}</span>
     </div>
+  )}
+  <div className="flex justify-between border-t border-slate-700 pt-1 mt-1">
+    <span><strong>Revised Total</strong></span>
+    <span className="text-slate-200 font-semibold">{formatCurrency(currentRevisedTotal)}</span>
+  </div>
+  <div className="flex justify-between">
+    <span>Deposit (50% of Revised Total)</span>
+    <span className="text-emerald-300">{formatCurrency(currentDepositAmount)}</span>
+  </div>
+  {totalPaid > 0 && (
+    <div className="flex justify-between text-emerald-400">
+      <span>Payments Received</span>
+      <span>-{formatCurrency(totalPaid)}</span>
+    </div>
+  )}
+  <div className="flex justify-between border-t border-slate-800 pt-1 mt-1 text-sm font-bold">
+    <span>Current Balance Due</span>
+    <span className="text-white">{formatCurrency(currentRemainingBalance)}</span>
+  </div>
+
+  {/* ===== NEW: Pending Change Orders ===== */}
+  {pendingChangeOrdersTotal !== 0 && (
+    <>
+      <div className="flex justify-between text-yellow-400 bg-yellow-900/20 px-2 py-1 rounded -mx-2">
+        <span>Pending Change Orders</span>
+        <span>+{formatCurrency(pendingChangeOrdersTotal)}</span>
+      </div>
+      <div className="flex justify-between border-t border-yellow-700 pt-1 mt-1 text-sm font-bold text-yellow-300 bg-yellow-900/20 px-2 py-1 rounded -mx-2">
+        <span>Potential Balance Due</span>
+        <span>{formatCurrency(currentRemainingBalance + pendingChangeOrdersTotal)}</span>
+      </div>
+    </>
+  )}
+</div>
   </div>
 </div>
 
