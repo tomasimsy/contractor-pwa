@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
+import Link from "next/link"; // <-- added
 import { supabase } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils/formatting";
 import {
@@ -528,7 +528,6 @@ export default function ExpensesReportPage() {
                   >
                     <span className="flex items-center">Last Payment {getSortIcon("last_payment_date")}</span>
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-600">Link</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -537,7 +536,15 @@ export default function ExpensesReportPage() {
                     row.subcontractor_paid + row.agent_paid + row.other_expenses;
                   return (
                     <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                      {/* */}<td className="px-4 py-3 font-mono text-slate-700">{row.estimate_number}</td>
+                      {/* Estimate # – now a clickable link */}
+                      <td className="px-4 py-3 font-mono text-slate-700">
+                        <Link
+                          href={`/reports/expenses/${row.id}`}
+                          className="hover:text-emerald-600 hover:underline transition-colors"
+                        >
+                          {row.estimate_number}
+                        </Link>
+                      </td>
                       {/* */}<td className="px-4 py-3 font-medium text-slate-700">{row.client_name}</td>
                       {/* */}<td className="px-4 py-3">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusColor(row.status)}`}>
@@ -560,11 +567,6 @@ export default function ExpensesReportPage() {
                       {/* */}<td className="px-4 py-3 text-center font-mono text-slate-500">{row.invoice_count}</td>
                       {/* */}<td className="px-4 py-3 text-xs text-slate-400">
                         {row.last_payment_date ? new Date(row.last_payment_date).toLocaleDateString() : "—"}
-                      </td>
-                      {/* */}<td className="px-4 py-3 text-center">
-                        <Link href={`/estimates/${row.id}`} className="text-emerald-600 hover:text-emerald-800 transition-colors">
-                          <LinkIcon size={14} />
-                        </Link>
                       </td>
                     </tr>
                   );
@@ -592,6 +594,7 @@ export default function ExpensesReportPage() {
 
         <div className="mt-4 text-xs text-slate-400 space-y-1">
           <p>* Only estimates with at least one invoice in <strong>paid</strong> or <strong>partial</strong> status are shown.</p>
+          <p>* Click the estimate number to view the full estimate details.</p>
           <p>* Revised Total = Estimate Total + Approved Change Orders</p>
           <p>* Payments Received = sum of <code>amount_paid</code> from those invoices.</p>
           <p>* Profit Margin = (Company Profit / Revised Total) × 100%</p>

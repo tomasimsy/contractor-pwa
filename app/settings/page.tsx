@@ -107,6 +107,23 @@ export default function SettingsPage() {
           </Link>
 
           <Link
+            href="/reports/expenses"
+            target=""
+            className="group flex items-center justify-between rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white transition">
+                <Receipt size={18} />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-slate-800">Reports Details</div>
+                <div className="text-xs text-slate-500">View account statements</div>
+              </div>
+            </div>
+            <div className="text-xs font-medium text-slate-400 group-hover:text-slate-700 transition">Open →</div>
+          </Link>
+
+          <Link
             href="/statement/"
             target=""
             className="group flex items-center justify-between rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
