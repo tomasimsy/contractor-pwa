@@ -361,228 +361,263 @@ export default function PublicEstimatePage() {
 
       <div className="max-w-xl mx-auto px-3 py-4 space-y-3">
         {/* Combined Card: Company & Customer */}
-        <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-4 grid grid-cols-2 gap-4 divide-x divide-slate-100">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <span className="bg-slate-950 text-white px-1 py-0.5 rounded font-black text-[9px] tracking-wider">OSR</span>
-              <span className="text-xs font-bold text-slate-950 tracking-tight">Pros</span>
-            </div>
-            <div className="text-[10px] text-slate-500 leading-tight">
-              <p className="text-slate-900 font-semibold">One Square Roofing LLC</p>
-            </div>
-            <p className="text-[9px] text-slate-400 pt-1 border-t border-slate-50 font-mono">
-              Issued: {formatDate(estimate?.created_at)}
-            </p>
-          </div>
-          <div className="pl-4 space-y-1 flex flex-col justify-between">
-            <div>
-              <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Prepared For</span>
-              <h3 className="text-xs font-bold text-slate-900 capitalize tracking-tight mt-0.5">
-                {client?.name || "Customer"}
-              </h3>
-              {client?.address && <p className="text-[10px] text-slate-500 leading-tight capitalize">{client.address}</p>}
-            </div>
-            <div className="text-[10px] text-slate-400 space-y-0.5">
-              {client?.email && <p className="lowercase truncate">✉ {client.email}</p>}
-              #{estimate?.estimate_number || id?.slice(0, 6)}
-            </div>
-          </div>
-        </div>
+  <div className="bg-white rounded-lg border border-slate-200/60 shadow-sm p-2 grid grid-cols-2 gap-2">
 
-        {/* Project Scope Card with Connector */}
-        <div className="bg-white rounded-xl border-2 border-slate-900/10 shadow-md overflow-hidden relative">
-          <div className="px-4 border-b-2 border-slate-100 bg-emerald-600 h-2"></div>
-          <div className="relative pl-6 py-4 space-y-6">
-            <div className="absolute left-3 top-8 bottom-8 w-px border-l-2 border-dotted border-amber-400 pointer-events-none"></div>
-
-            {estimate?.description && (
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0 z-10 relative" />
-                  <span className="text-[9px] font-extrabold text-amber-900 uppercase tracking-wider">
-                    Project Objective
-                  </span>
-                </div>
-                <p className="text-xs italic leading-relaxed whitespace-pre-line capitalize font-medium bg-amber-50/40 border border-amber-200/70 rounded-lg p-3 text-amber-800 ml-4">
-                  {estimate.description}
-                </p>
-              </div>
-            )}
-
-            {estimate?.notes && (
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0 z-10 relative" />
-                  <span className="font-extrabold text-[9px] uppercase tracking-wide text-amber-900">Notes</span>
-                </div>
-                <div className="text-[11px] text-amber-800 bg-amber-50/40 border border-amber-200/70 rounded-lg p-3 ml-4">
-                  <p className="font-medium italic">{estimate.notes}</p>
-                </div>
-              </div>
-            )}
-
-            <ProgressDisplay
-              estimateId={id as string}
-              projects={projectsWithTotals}
-              hasPayment={totalPaid > 0}
-              paymentNote={formatCurrency(totalPaid)}
-              totalPaid={totalPaid}
-              overallTotal={overallTotal}
-              refreshKey={progressRefresh}
-            />
-          </div>
-        </div>
-
-{/* Scope Summary */}
-<div className="bg-white border border-slate-200 rounded-xl shadow-sm p-2.5 space-y-3">
-
-  {/* Header */}
-  <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-    <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-700">
-      Scope Summary
-    </h3>
+  {/* LEFT: COMPANY */}
+  <div className="pr-2 space-y-0.5">
 
     <div className="flex items-center gap-1">
-      <span className="text-[8px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full font-bold">
-        {items.length} Items
+      <span className="bg-slate-950 text-white px-1 py-[2px] rounded text-[8px] font-black tracking-wider">
+        OSR
       </span>
+      <span className="text-[11px] font-bold text-slate-900">
+        Pros
+      </span>
+    </div>
 
-      {changeOrders.length > 0 && (
-        <span className="text-[8px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">
-          {changeOrders.length} CO
-        </span>
+    <p className="text-[9px] font-semibold text-slate-800 leading-tight">
+      One Square Roofing LLC | <span className="text-slate-400"> Issued: {formatDate(estimate?.created_at)}</span>
+      
+    </p>
+
+    <p className="text-[8px] text-slate-400 border-t border-slate-100 pt-0.5">
+      
+    </p>
+
+  </div>
+
+  {/* RIGHT: CLIENT */}
+  <div className="pl-2 space-y-0.5">
+
+    {/* <span className="text-[8px] uppercase font-bold tracking-wider text-slate-400">
+      Prepared For
+    </span> */}
+
+    <h3 className="text-[11px] font-bold text-slate-900 truncate">
+      {client?.name || "Customer"} | <span className="text-slate-400"> #{estimate?.estimate_number || id?.slice(0, 6)}</span>
+    </h3>
+
+    {client?.address && (
+      <p className="text-[9px] text-slate-500 truncate">
+        {client.address}
+      </p>
+    )}
+
+    <div className="text-[8px] text-slate-400 space-y-0.5 pt-0.5">
+      {client?.email && (
+        <p className="truncate">✉ {client.email}</p>
       )}
+
+       
+    </div>
+
+  </div>
+
+</div>
+
+        {/* Project Scope Card with Connector */}
+<div className="bg-white border border-emerald-400 rounded-xl shadow-sm overflow-hidden">
+
+  {/* HEADER STRIP */}
+  <div className="bg-emerald-600 px-4 py-2 flex items-center justify-between">
+    <div className="text-white">
+      <div className="text-[9px] uppercase tracking-widest opacity-80">
+        Scope & Estimate
+      </div>
+      <div className="text-xs font-bold">
+        {estimate?.name || "Project Overview"}
+      </div>
+    </div>
+
+    <div className="text-right text-white">
+      <div className="text-[9px] uppercase opacity-80">Total</div>
+      <div className="text-sm font-black">
+        {formatCurrency(revisedTotal)}
+      </div>
     </div>
   </div>
 
-  {/* Projects */}
-  {(() => {
-    const groups = items.reduce((acc, item) => {
-      const key = item.project_name || "Uncategorized";
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(item);
-      return acc;
-    }, {} as Record<string, typeof items>);
+  <div className="p-4 space-y-5">
 
-    return Object.entries(groups).map(([projectName, projectItems]) => {
-      const list = projectItems as typeof items;
-      const subtotal = list.reduce((sum, i) => sum + i.total, 0);
+    {/* PROGRESS */}
+    <div className="bg-slate-50 border border-slate-100 rounded-lg p-1">
+      <ProgressDisplay
+        estimateId={id as string}
+        projects={projectsWithTotals}
+        hasPayment={totalPaid > 0}
+        paymentNote={formatCurrency(totalPaid)}
+        totalPaid={totalPaid}
+        overallTotal={overallTotal}
+        refreshKey={progressRefresh}
+      />
+    </div>
 
-      return (
-        <div key={projectName} className="space-y-1">
+    {/* OBJECTIVE + NOTES */}
+    {(estimate?.description || estimate?.notes) && (
+      <div className="space-y-3">
 
-          {/* Project Header */}
-          <div className="flex items-center justify-between border-b border-slate-200 pb-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-[#1A434E] truncate">
-              {projectName}
-            </span>
-
-            <span className="text-[10px] font-mono font-black text-slate-500 shrink-0">
-              {formatCurrency(subtotal)}
-            </span>
+        {estimate?.description && (
+          <div className="border-l-4 border-amber-400 bg-amber-50/40 rounded-md p-3">
+            <div className="text-[9px] font-black uppercase tracking-wider text-amber-800 mb-1">
+              Project Objective
+            </div>
+            <p className="text-xs text-amber-900 leading-relaxed whitespace-pre-line">
+              {estimate.description}
+            </p>
           </div>
+        )}
 
-          {/* Item Rows */}
-          <div className="space-y-0.5">
-            {list.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-2 py-0.5"
-              >
-                <div className="flex items-center gap-1 min-w-0 flex-1">
-                  <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
-
-                  <span className="text-[10px] text-slate-700 truncate">
-                    {item.name}
-                  </span>
-                </div>
-
-                <span className="text-[10px] font-semibold font-mono text-slate-800 shrink-0">
-                  {formatCurrency(item.total)}
-                </span>
-              </div>
-            ))}
+        {estimate?.notes && (
+          <div className="border-l-4 border-slate-300 bg-slate-50 rounded-md p-3">
+            <div className="text-[9px] font-black uppercase tracking-wider text-slate-500 mb-1">
+              Notes
+            </div>
+            <p className="text-[11px] text-slate-700 italic">
+              {estimate.notes}
+            </p>
           </div>
-        </div>
-      );
-    });
-  })()}
+        )}
 
-  {/* Change Orders */}
-  {changeOrders.length > 0 && (
-    <div className="border-t border-slate-100 pt-2 space-y-1">
+      </div>
+    )}
 
-      <div className="text-[9px] font-black uppercase tracking-wide text-slate-500 mb-1">
-        Change Orders
+    {/* SCOPE HEADER */}
+    <div className="flex items-center justify-between border-t pt-4">
+      <div className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+        Scope Summary
       </div>
 
-      {changeOrders.map((co) => (
-        <div
-          key={co.id}
-          className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 border transition-colors ${
-            co.status === "pending"
-              ? "bg-amber-50 border-amber-200"
-              : "bg-emerald-50 border-emerald-100"
-          }`}
-        >
-          {/* Left */}
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex gap-1">
+        <span className="text-[8px] bg-slate-100 px-2 py-0.5 rounded-full font-bold text-slate-600">
+          {items.length} Items
+        </span>
 
-            <div
-              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                co.status === "pending"
-                  ? "bg-amber-500"
-                  : "bg-emerald-500"
-              }`}
-            />
-
-            <span className="text-[10px] font-medium text-slate-800 truncate">
-              {co.title}
-            </span>
-
-          </div>
-
-          {/* Right */}
-          <div className="flex items-center gap-2 shrink-0">
-
-            <span
-              className={`text-[10px] font-black font-mono tracking-tight ${
-                co.total_amount >= 0
-                  ? "text-emerald-600"
-                  : "text-rose-600"
-              }`}
-            >
-              {co.total_amount >= 0 ? "+" : "-"}
-              {formatCurrency(Math.abs(co.total_amount))}
-            </span>
-
-            {co.status === "pending" && (
-              <button
-                onClick={() =>
-                  approveChangeOrder(co.id, co.total_amount)
-                }
-                className="
-                  px-1.5
-                  py-0.5
-                  rounded-md
-                  bg-amber-600
-                  text-white
-                  text-[8px]
-                  font-bold
-                  hover:bg-amber-700
-                  transition-colors
-                "
-              >
-                Approve
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+        {changeOrders.length > 0 && (
+          <span className="text-[8px] bg-emerald-100 px-2 py-0.5 rounded-full font-bold text-emerald-700">
+            {changeOrders.length} CO
+          </span>
+        )}
+      </div>
     </div>
-  )}
-</div>
 
+    {/* PROJECTS */}
+    <div className="space-y-4">
+
+      {Object.entries(
+        items.reduce((acc, item) => {
+          const key = item.project_name || "Uncategorized";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(item);
+          return acc;
+        }, {} as Record<string, typeof items>)
+      ).map(([projectName, projectItems]) => {
+        const list = projectItems as typeof items;
+        const subtotal = list.reduce((sum, i) => sum + i.total, 0);
+
+        return (
+          <div key={projectName} className="space-y-1">
+
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-900 truncate">
+                {projectName}
+              </span>
+
+              <span className="text-[10px] font-mono font-bold text-slate-600">
+                {formatCurrency(subtotal)}
+              </span>
+            </div>
+
+            <div className="space-y-0.5">
+              {list.map((item) => (
+                <div key={item.id} className="flex justify-between text-[10px]">
+
+                  <div className="flex items-center gap-1 min-w-0">
+                    <div className="w-1 h-1 rounded-full bg-slate-300" />
+                    <span className="truncate text-slate-700">
+                      {item.name}
+                    </span>
+                  </div>
+
+                  <span className="font-mono font-semibold text-slate-800">
+                    {formatCurrency(item.total)}
+                  </span>
+
+                </div>
+              ))}
+            </div>
+
+          </div>
+        );
+      })}
+
+    </div>
+
+    {/* CHANGE ORDERS */}
+    {changeOrders.length > 0 && (
+      <div className="space-y-2 pt-3 border-t border-slate-100">
+
+        <div className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+          Change Orders
+        </div>
+
+        {changeOrders.map((co) => (
+          <div
+            key={co.id}
+            className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+              co.status === "pending"
+                ? "bg-amber-50 border-amber-100"
+                : "bg-emerald-50 border-emerald-100"
+            }`}
+          >
+
+            <div className="flex items-center gap-2 min-w-0">
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${
+                  co.status === "pending"
+                    ? "bg-amber-500"
+                    : "bg-emerald-500"
+                }`}
+              />
+
+              <span className="text-[10px] text-slate-800 font-medium truncate">
+                {co.title}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+
+              <span
+                className={`text-[10px] font-black font-mono ${
+                  co.total_amount >= 0
+                    ? "text-emerald-600"
+                    : "text-rose-600"
+                }`}
+              >
+                {co.total_amount >= 0 ? "+" : "-"}
+                {formatCurrency(Math.abs(co.total_amount))}
+              </span>
+
+              {co.status === "pending" && (
+                <button
+                  onClick={() =>
+                    approveChangeOrder(co.id, co.total_amount)
+                  }
+                  className="px-2 py-0.5 text-[8px] font-bold bg-amber-600 text-white rounded hover:bg-amber-700"
+                >
+                  Approve
+                </button>
+              )}
+
+            </div>
+
+          </div>
+        ))}
+
+      </div>
+    )}
+
+  </div>
+</div>
         {/* Combined Financial Summary + Payment History Card */}
 <div className="bg-slate-900 text-white rounded-xl p-4 shadow-md border border-slate-950 flex flex-col gap-3 relative overflow-hidden">
   {/* Gradient accent */}

@@ -99,44 +99,76 @@ export default function ProgressDisplay({
         const activeNote = lastCompleted?.note || null;
 
         return (
-<div key={project.name} className="border-b border-slate-100 last:border-0 py-1.5">
-  {/* Header: name + percent */}
-  <div className="flex items-center justify-between text-[10px]">
-    <span className="font-medium text-slate-700 truncate pr-2">{project.name}</span>
-    <span className="font-bold text-emerald-600 shrink-0">{progressPercent}%</span>
+<div key={project.name} className="border-b border-slate-100 last:border-0 pb-2 space-y-1">
+
+  {/* Header: label + progress inline */}
+  <div className="flex items-center gap-3 text-[10px]">
+
+    <span className="font-medium text-slate-700 whitespace-nowrap">
+      Project Progress:
+    </span>
+
+    {/* Progress line (inline flex-grow) */}
+    <div className="relative flex-1 h-2 flex items-center">
+
+      {/* base line */}
+      <div className="absolute left-0 right-0 h-px bg-slate-200" />
+
+      {/* fill line */}
+      <div
+        className="absolute left-0 h-px bg-emerald-500 transition-all"
+        style={{ width: `${progressPercent}%` }}
+      />
+
+      {/* dots */}
+      <div className="relative flex justify-between w-full">
+        {allMilestones.map((m, idx) => (
+          <div
+            key={m.milestone_order || idx}
+            className="flex flex-col items-center"
+            style={{ width: `${100 / allMilestones.length}%` }}
+          >
+            <div
+              className={`w-2 h-2 rounded-full transition-colors ${
+                m.completed_at ? "bg-emerald-500" : "bg-slate-300"
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+
+    </div>
+
+    {/* percent */}
+    <span className="font-bold text-emerald-600 whitespace-nowrap">
+      {progressPercent}%
+    </span>
+
   </div>
 
-  {/* Progress bar with dots */}
-  <div className="relative mt-0.5">
-    <div className="absolute top-1/2 left-0 w-full h-px bg-slate-200 -translate-y-1/2" />
-    <div
-      className="absolute top-1/2 left-0 h-px bg-emerald-500 -translate-y-1/2 transition-all"
-      style={{ width: `${progressPercent}%` }}
-    />
-    <div className="relative flex justify-between">
-      {allMilestones.map((m, idx) => (
-        <div key={m.milestone_order || idx} className="flex flex-col items-center" style={{ width: `${100 / allMilestones.length}%` }}>
-          <div
-            className={`w-2 h-2 rounded-full z-10 transition-colors ${
-              m.completed_at ? 'bg-emerald-500' : 'bg-slate-300'
-            }`}
-          />
-          <span className={`text-[7px] mt-0.5 truncate w-full text-center ${
-            m.completed_at ? 'text-emerald-700 font-medium' : 'text-slate-400'
-          }`}>
-            {m.title}
-          </span>
-        </div>
-      ))}
-    </div>
+  {/* milestone labels (kept subtle under bar) */}
+  <div className="flex justify-between">
+    {allMilestones.map((m, idx) => (
+      <span
+        key={m.milestone_order || idx}
+        className={`text-[7px] text-center w-full px-[1px] truncate ${
+          m.completed_at
+            ? "text-emerald-700 font-medium"
+            : "text-slate-400"
+        }`}
+      >
+        {m.title}
+      </span>
+    ))}
   </div>
 
   {/* Active note */}
   {activeNote && (
-    <div className="mt-0.5 text-[8px] text-amber-700 bg-amber-50/80 rounded px-1.5 py-0.5 italic truncate">
-      {typeof activeNote === 'string' ? activeNote : activeNote}
+    <div className="text-[8px] text-amber-700 bg-amber-50/70 rounded px-1.5 py-0.5 italic truncate">
+      {typeof activeNote === "string" ? activeNote : activeNote}
     </div>
   )}
+
 </div>
         );
       })

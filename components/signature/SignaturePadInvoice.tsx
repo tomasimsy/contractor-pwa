@@ -188,7 +188,7 @@ export default function SignaturePadInvoice({
   // Terms & Conditions Component
   const TermsAndConditions = () => (
     <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-      <div className="text-xs font-semibold text-gray-700 mb-2">Terms & Conditions</div>
+      {/* <div className="text-xs font-semibold text-gray-700 mb-2">Terms & Conditions</div> */}
       <div className="space-y-1 text-[11px] text-gray-600">
         <p>✓ Valid for 30 days from date issued</p>
         <p>✓ 50% deposit required to begin, balance due upon completion</p>
@@ -207,20 +207,22 @@ export default function SignaturePadInvoice({
 
   // Main Card Component
   return (
-<div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 space-y-3">
+<div className="bg-white rounded-xl p-3 space-y-3">
 
   {/* Terms */}
-  <div className="rounded-xl border border-slate-200 overflow-hidden">
+  <div className="rounded-xl overflow-hidden">
+
     <button
       onClick={() => setShowTerms(!showTerms)}
-      className="w-full px-3 py-2 flex items-center justify-between bg-slate-50"
+      className="w-full px-3 py-2 flex items-center justify-between"
+      style={{ backgroundColor: "#f0fdf4" }} // light green tint
     >
-      <span className="text-[11px] font-semibold text-slate-700">
+      <span className="text-[11px] font-semibold text-emerald-800">
         Terms & Conditions
       </span>
 
       <span
-        className={`text-xs text-slate-400 transition ${
+        className={`text-xs text-emerald-500 transition ${
           showTerms ? "rotate-180" : ""
         }`}
       >
@@ -229,54 +231,52 @@ export default function SignaturePadInvoice({
     </button>
 
     {showTerms && (
-      <div className="border-t border-slate-100 p-3">
+      <div className="p-3 text-sm text-slate-600">
         <TermsAndConditions />
       </div>
     )}
+
   </div>
 
+  {/* SIGNED STATE */}
   {signed ? (
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3">
+    <div className="px-3 py-3 space-y-2 text-center">
 
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-emerald-700">
-          Signed
-        </span>
-
-        {signature && (
-          <span className="text-[10px] text-emerald-600">
-            {/* {new Date(signature.date).toLocaleDateString()} */}
-          </span>
-        )}
+      <div className="text-sm font-semibold text-emerald-700">
+        Signed
       </div>
 
       {signature && (
-        <div className="mt-3 flex flex-col items-center text-center">
-  {signature.type === "draw" ? (
-    <img
-      src={signature.value}
-      alt="Signature"
-      className="max-h-14 object-contain"
-    />
-  ) : (
-    <div
-      className="text-[32px] text-slate-700"
-      style={{
-        fontFamily: "'Great Vibes', cursive",
-        lineHeight: 1.1,
-      }}
-    >
-      {signature.value}
-    </div>
-  )}
+        <div className="flex flex-col items-center space-y-2">
 
-  <div className="w-48 border-b border-slate-300 mt-1"></div>
+          {signature.type === "draw" ? (
+            <img
+              src={signature.value}
+              alt="Signature"
+              className="max-h-14 object-contain"
+            />
+          ) : (
+            <div
+              className="text-[32px] text-emerald-900"
+              style={{
+                fontFamily: "'Great Vibes', cursive",
+                lineHeight: 1.1,
+              }}
+            >
+              {signature.value}
+            </div>
+          )}
 
-  <div className="mt-1 text-[10px] text-slate-500">
-    Electronically signed • {new Date(signature.date).toLocaleDateString()}
-    <p>Thank you for your business.</p>
-  </div>
-</div>
+          <div
+            className="w-40 border-b"
+            style={{ borderColor: "#d1fae5" }} // emerald-100
+          />
+
+          <div className="text-[10px] text-emerald-600">
+            Electronically signed • {new Date(signature.date).toLocaleDateString()}
+          </div>
+
+        </div>
       )}
     </div>
   ) : (
@@ -291,7 +291,13 @@ export default function SignaturePadInvoice({
 
       {showDetailedBreakdown && estimateId && (
         <Link href={`/public/estimates/${estimateId}/itemized`}>
-          <button className="w-full py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 hover:bg-slate-50 transition">
+          <button
+            className="w-full py-2.5 rounded-xl text-sm"
+            style={{
+              backgroundColor: "#f0fdf4",
+              color: "#166534"
+            }}
+          >
             View Detailed Breakdown
           </button>
         </Link>
@@ -299,47 +305,39 @@ export default function SignaturePadInvoice({
     </>
   )}
 
-  {/* Signature Modal */}
+  {/* MODAL */}
   {showModal && (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+
       <div
-        className="bg-white rounded-2xl max-w-sm w-full p-4 shadow-xl"
+        className="bg-white rounded-2xl w-full max-w-sm p-4"
         onClick={(e) => e.stopPropagation()}
       >
 
-        <h3 className="text-sm font-semibold mb-3 text-slate-800">
+        <h3 className="text-sm font-semibold mb-3 text-emerald-800">
           Customer Signature
         </h3>
 
         <div className="flex gap-2 mb-3">
           <button
             onClick={() => setSignatureType("draw")}
-            className={`flex-1 py-2 text-sm rounded-lg transition ${
-              signatureType === "draw"
-                ? "text-white"
-                : "bg-slate-100 text-slate-600"
-            }`}
-            style={
-              signatureType === "draw"
-                ? { backgroundColor: BRAND_GREEN }
-                : undefined
-            }
+            className="flex-1 py-2 text-sm rounded-lg text-white"
+            style={{
+              backgroundColor:
+                signatureType === "draw" ? BRAND_GREEN : "#e5e7eb"
+            }}
           >
             Draw
           </button>
 
           <button
             onClick={() => setSignatureType("type")}
-            className={`flex-1 py-2 text-sm rounded-lg transition ${
-              signatureType === "type"
-                ? "text-white"
-                : "bg-slate-100 text-slate-600"
-            }`}
-            style={
-              signatureType === "type"
-                ? { backgroundColor: BRAND_GREEN }
-                : undefined
-            }
+            className="flex-1 py-2 text-sm rounded-lg"
+            style={{
+              backgroundColor:
+                signatureType === "type" ? BRAND_GREEN : "#e5e7eb",
+              color: signatureType === "type" ? "white" : "#374151"
+            }}
           >
             Type
           </button>
@@ -351,18 +349,20 @@ export default function SignaturePadInvoice({
             placeholder="Full name"
             value={typedName}
             onChange={(e) => setTypedName(e.target.value)}
-            className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none"
+            className="w-full border rounded-lg p-3 text-sm focus:outline-none"
+            style={{ borderColor: "#d1fae5" }}
             autoFocus
           />
         ) : (
-          <div
-            className="border border-slate-200 rounded-lg overflow-hidden"
-            onTouchMove={(e) => e.preventDefault()}
-          >
+          <div onTouchMove={(e) => e.preventDefault()}>
             <canvas
               ref={canvasRef}
-              className="w-full bg-white touch-none"
-              style={{ height: "120px", cursor: "crosshair" }}
+              className="w-full bg-white touch-none rounded-lg"
+              style={{
+                height: "120px",
+                cursor: "crosshair",
+                border: "1px solid #d1fae5"
+              }}
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
@@ -372,11 +372,8 @@ export default function SignaturePadInvoice({
               onTouchEnd={stopDrawing}
             />
 
-            <div className="flex justify-end px-2 py-1 bg-slate-50">
-              <button
-                onClick={clearCanvas}
-                className="text-xs text-red-500"
-              >
+            <div className="flex justify-end px-2 py-1">
+              <button className="text-xs text-emerald-600" onClick={clearCanvas}>
                 Clear
               </button>
             </div>
@@ -386,7 +383,8 @@ export default function SignaturePadInvoice({
         <div className="flex gap-2 mt-3">
           <button
             onClick={() => setShowModal(false)}
-            className="flex-1 py-2 rounded-lg bg-slate-100 text-sm text-slate-700"
+            className="flex-1 py-2 rounded-lg text-sm"
+            style={{ backgroundColor: "#f3f4f6", color: "#374151" }}
           >
             Cancel
           </button>
