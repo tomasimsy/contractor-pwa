@@ -99,28 +99,25 @@ export default function ProgressDisplay({
         const activeNote = lastCompleted?.note || null;
 
         return (
-<div key={project.name} className="border-b border-slate-100 last:border-0 pb-2 space-y-1">
+<div key={project.name} className="border-b border-slate-100 last:border-0 pb-2">
 
-  {/* Header: label + progress inline */}
   <div className="flex items-center gap-3 text-[10px]">
 
-    <span className="font-medium text-slate-700 whitespace-nowrap">
+    {/* LABEL (now aligned to the bar line) */}
+    <span className="font-medium text-slate-700 leading-none whitespace-nowrap flex items-center h-2">
       Project Progress:
     </span>
 
-    {/* Progress line (inline flex-grow) */}
+    {/* PROGRESS BAR */}
     <div className="relative flex-1 h-2 flex items-center">
 
-      {/* base line */}
       <div className="absolute left-0 right-0 h-px bg-slate-200" />
 
-      {/* fill line */}
       <div
         className="absolute left-0 h-px bg-emerald-500 transition-all"
         style={{ width: `${progressPercent}%` }}
       />
 
-      {/* dots */}
       <div className="relative flex justify-between w-full">
         {allMilestones.map((m, idx) => (
           <div
@@ -139,15 +136,15 @@ export default function ProgressDisplay({
 
     </div>
 
-    {/* percent */}
-    <span className="font-bold text-emerald-600 whitespace-nowrap">
+    {/* PERCENT (aligned to same baseline) */}
+    <span className="font-bold text-emerald-600 whitespace-nowrap leading-none">
       {progressPercent}%
     </span>
 
   </div>
 
-  {/* milestone labels (kept subtle under bar) */}
-  <div className="flex justify-between">
+  {/* milestone labels */}
+  <div className="flex justify-between -mt-1">
     {allMilestones.map((m, idx) => (
       <span
         key={m.milestone_order || idx}
