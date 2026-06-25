@@ -442,7 +442,7 @@ export default function PublicEstimatePage() {
         </div>
 
         {/* Project Scope Card with Connector */}
-        <div className="bg-white border border-emerald-400 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-emerald-600 rounded-xl border-[4px] shadow-sm overflow-hidden">
           {/* HEADER STRIP */}
           <div className="bg-emerald-600 px-4 py-2 flex items-center justify-between">
             <div className="text-white">
