@@ -483,11 +483,11 @@ export default function PublicEstimatePage() {
                   </div>
                 )}
                 {estimate?.notes && (
-                  <div className="border-l-4 border-slate-300 bg-slate-50 rounded-md p-3">
-                    <div className="text-[9px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                      Notes
+                  <div className="border-l-4 border-slate-300 bg-amber-50/40 rounded-md p-3">
+                    <div className="text-[9px] font-black uppercase tracking-wider text-amber-800 mb-1">
+                      Notes*
                     </div>
-                    <p className="text-[11px] text-slate-700 italic">{estimate.notes}</p>
+                    <p className="text-[11px] text-amber-800 italic">{estimate.notes}</p>
                   </div>
                 )}
               </div>
