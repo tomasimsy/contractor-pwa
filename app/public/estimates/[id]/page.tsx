@@ -553,8 +553,8 @@ export default function PublicEstimatePage() {
 
               {/* CHANGE ORDERS */}
               {changeOrders.length > 0 && (
-                <div className="space-y-2 pt-3 border-t border-slate-100">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                <div className="space-y-2 pt-3 bg-slate-50 border-t-slate-300 border-l-4 border-l-emerald-600 pl-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-600">
                     Change Orders
                   </div>
                   {changeOrders.map((co) => (
