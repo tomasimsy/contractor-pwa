@@ -6,7 +6,6 @@ import { formatCurrency } from "@/lib/utils/formatting";
 import { X, Trash2, Edit2, Check, DollarSign, Users, Plus, Receipt, Eye } from "lucide-react";
 import ChangeOrderTab from "@/components/changeOrder/ChangeOrderTab";
 
-
 type Subcontractor = {
   id: string;
   name: string;
@@ -91,16 +90,12 @@ export default function ProjectFinancialsModal({
   estimateTotal,
   onRefresh,
 }: ProjectFinancialsModalProps) {
-   // Inside the component, where you render tabs:
-const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agents" | "changeorders">("subcontractors");
-
+  const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agents" | "changeorders">("subcontractors");
   const [companyPercentage, setCompanyPercentage] = useState<30 | 60>(30);
   const agentPercentage = companyPercentage === 30 ? 70 : 40;
-  // ✅ ADD THESE TWO LINES:
   const [newSub, setNewSub] = useState({ name: "", company_name: "", phone: "", email: "" });
   const [newAgent, setNewAgent] = useState({ name: "", email: "", phone: "" });
   
-  // Subcontractor state
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
   const [assignedSubs, setAssignedSubs] = useState<AssignedSub[]>([]);
   const [showNewSubForm, setShowNewSubForm] = useState(false);
@@ -118,7 +113,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
   const [editingSubPayment, setEditingSubPayment] = useState<string | null>(null);
   const [editSubPaymentAmount, setEditSubPaymentAmount] = useState(0);
 
-  // Expense state
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<string | null>(null);
@@ -130,7 +124,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
     notes: "",
   });
 
-  // Agent state
   const [agents, setAgents] = useState<Agent[]>([]);
   const [assignedAgents, setAssignedAgents] = useState<AssignedAgent[]>([]);
   const [showNewAgentForm, setShowNewAgentForm] = useState(false);
@@ -150,7 +143,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Calculations
   const totalSubAssigned = assignedSubs.reduce((sum, s) => sum + (s.amount || 0), 0);
   const totalSubPaid = assignedSubs.reduce((sum, s) => sum + (s.paid_amount || 0), 0);
   const totalSubOwed = totalSubAssigned - totalSubPaid;
@@ -169,11 +161,9 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
   async function loadAllData() {
     setLoading(true);
     try {
-      // Load subcontractors list
       const { data: subs } = await supabase.from("subcontractors").select("*").order("name");
       if (subs) setSubcontractors(subs);
 
-      // Load assigned subcontractors with payments
       const { data: assigned } = await supabase
         .from("estimate_subcontractors")
         .select("*, subcontractors(*)")
@@ -194,7 +184,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         setAssignedSubs(subsWithPayments);
       }
 
-      // Load expenses
       const { data: expenseData } = await supabase
         .from("estimate_expenses")
         .select("*")
@@ -202,11 +191,9 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         .order("expense_date", { ascending: false });
       if (expenseData) setExpenses(expenseData);
 
-      // Load agents list
       const { data: ags } = await supabase.from("agents").select("*").order("name");
       if (ags) setAgents(ags);
 
-      // Load assigned agents with payments
       const { data: assignedAgentsData } = await supabase
         .from("estimate_agents")
         .select("*, agents(*)")
@@ -228,14 +215,12 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         setAssignedAgents(agentsWithPayments);
       }
     } catch (err) {
-      console.error(err);
       alert("Failed to load data");
     } finally {
       setLoading(false);
     }
   }
 
-  // ==================== SUBCONTRACTOR CRUD ====================
   async function createSubcontractor() {
     if (!newSub.name.trim()) {
       alert("Name is required");
@@ -255,7 +240,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
 
     if (error) {
       alert("Error creating subcontractor");
-      console.error(error);
     } else if (data) {
       setSubcontractors([data, ...subcontractors]);
       setSelectedSubId(data.id);
@@ -291,7 +275,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
 
     if (error) {
       alert("Error assigning subcontractor");
-      console.error(error);
     } else if (newSub) {
       if (amountToSave > 0) {
         await supabase.from("subcontractor_payments").insert({
@@ -330,9 +313,7 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
   async function removeSubAssignment(subId: string) {
     if (!confirm("Remove this subcontractor? All related payments will also be deleted.")) return;
     setSaving(true);
-    // Delete all payments first
     await supabase.from("subcontractor_payments").delete().eq("estimate_subcontractor_id", subId);
-    // Delete assignment
     await supabase.from("estimate_subcontractors").delete().eq("id", subId);
     await loadAllData();
     onRefresh();
@@ -360,7 +341,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
 
     if (error) {
       alert("Error recording payment");
-      console.error(error);
     } else {
       await loadAllData();
       onRefresh();
@@ -395,7 +375,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
     alert(`Payment updated from ${formatCurrency(oldAmount)} to ${formatCurrency(newAmount)}`);
   }
 
-  // ==================== EXPENSE CRUD ====================
   async function addExpense() {
     if (expenseForm.amount <= 0) {
       alert("Enter an amount");
@@ -418,7 +397,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
 
     if (error) {
       alert("Error adding expense");
-      console.error(error);
     } else {
       setExpenseForm({
         category: "materials",
@@ -455,7 +433,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
     setSaving(false);
   }
 
-  // ==================== AGENT CRUD ====================
   async function createAgent() {
     if (!newAgent.name.trim()) {
       alert("Name is required");
@@ -474,7 +451,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
 
     if (error) {
       alert("Error creating agent");
-      console.error(error);
     } else if (data) {
       setAgents([data, ...agents]);
       setSelectedAgentId(data.id);
@@ -502,7 +478,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
 
     if (error) {
       alert("Error assigning agent");
-      console.error(error);
     } else {
       await redistributeAgentEvenly();
       await loadAllData();
@@ -547,9 +522,7 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
   async function removeAgentAssignment(agentAssignId: string, agentId: string) {
     if (!confirm("Remove this agent? All payments made to this agent for this estimate will be permanently deleted.")) return;
     setSaving(true);
-    // Delete all agent payments for this estimate and agent
     await supabase.from("agent_payments").delete().eq("estimate_id", estimateId).eq("agent_id", agentId);
-    // Delete the assignment
     await supabase.from("estimate_agents").delete().eq("id", agentAssignId);
     await redistributeAgentEvenly();
     await loadAllData();
@@ -580,7 +553,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
 
     if (error) {
       alert("Error recording payment");
-      console.error(error);
     } else {
       await loadAllData();
       onRefresh();
@@ -630,7 +602,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="sticky top-0 bg-white border-b px-5 py-4 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-800">Project Financials</h2>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600">
@@ -639,7 +610,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Summary Card */}
           <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Estimate Total:</span>
@@ -709,7 +679,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
             )}
           </div>
 
-          {/* Tab Buttons */}
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab("subcontractors")}
@@ -737,7 +706,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
             </button>
           </div>
 
-          {/* ==================== SUBCONTRACTORS TAB ==================== */}
           {activeTab === "subcontractors" && (
             <div className="space-y-4">
               <div>
@@ -811,7 +779,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
             </div>
           )}
 
-          {/* ==================== EXPENSES TAB ==================== */}
           {activeTab === "expenses" && (
             <div className="space-y-4">
               {!showExpenseForm ? (
@@ -869,7 +836,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
             </div>
           )}
 
-          {/* ==================== AGENTS TAB ==================== */}
           {activeTab === "agents" && (
             <div className="space-y-4">
               <div>
@@ -955,7 +921,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         </div>
       </div>
 
-      {/* Subcontractor Payment Modal */}
       {showSubPaymentModal && selectedSubForPayment && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-md">
@@ -972,7 +937,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         </div>
       )}
 
-      {/* Subcontractor Payment History Modal */}
       {showSubPaymentHistory && selectedSubForHistory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
@@ -1015,7 +979,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         </div>
       )}
 
-      {/* Agent Payment Modal */}
       {showAgentPaymentModal && selectedAgentForPayment && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-md">
@@ -1029,7 +992,6 @@ const [activeTab, setActiveTab] = useState<"subcontractors" | "expenses" | "agen
         </div>
       )}
 
-      {/* Agent Payment History Modal */}
       {showAgentPaymentHistory && selectedAgentForHistory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-y-auto">

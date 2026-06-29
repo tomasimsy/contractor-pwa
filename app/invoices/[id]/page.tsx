@@ -10,7 +10,9 @@ import PaymentModal from "@/components/payments/PaymentModal";
 import Link from "next/link";
 import { useCompanySettings } from "@/lib/hooks/useCompanySettings";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { Trash2, Lock, Unlock, AlertCircle, ArrowLeft, FileText, Receipt } from "lucide-react";
+import ProjectFinancialsModal from "@/components/ProjectFinancialsModal";
+
+import { Trash2, Lock, Unlock, AlertCircle, ArrowLeft, FileText, Receipt, DollarSign } from "lucide-react";
 
 export default function InvoicePage() {
   const router = useRouter();
@@ -30,6 +32,10 @@ export default function InvoicePage() {
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
   const { settings } = useCompanySettings();
 
+  // Modal states
+  const [showFinancialsModal, setShowFinancialsModal] = useState(false);
+  const [estimateId, setEstimateId] = useState<string | null>(null);
+
   // ----- Core data -----
   const [originalSubtotal, setOriginalSubtotal] = useState(0);
   const [approvedChangeTotal, setApprovedChangeTotal] = useState(0);
@@ -43,23 +49,41 @@ export default function InvoicePage() {
   const [canUnlock, setCanUnlock] = useState(false);
   const [isOverdue, setIsOverdue] = useState(false);
 
+  // Edit Mode State
+  const [fabOpen, setFabOpen] = useState(false);
+
   useEffect(() => {
     loadInvoice();
   }, [id]);
 
-  async function loadInvoice() {
+  useEffect(() => {
+    const fetchEstimateId = async () => {
+      if (!invoice?.invoice_number) return;
+      const { data, error } = await supabase
+        .from("estimates")
+        .select("id")
+        .eq("estimate_number", invoice.invoice_number)
+        .maybeSingle();
+      if (data) setEstimateId(data.id);
+      else console.warn("No estimate found for number", invoice.invoice_number);
+    };
+    fetchEstimateId();
+  }, [invoice]);
+
+  // ----- loadInvoice with skipLoading flag -----
+  async function loadInvoice(skipLoading = false) {
     try {
-      setLoading(true);
+      if (!skipLoading) setLoading(true);
       const { data: inv, error: invError } = await supabase
         .from("invoices")
         .select("*")
         .eq("id", id)
         .single();
 
-        if (invError || !inv) {
-      console.error("Invoice not found");
-       return;
-    }
+      if (invError || !inv) {
+        console.error("Invoice not found");
+        return;
+      }
       if (invError) throw invError;
       setInvoice(inv);
       setIsLocked(inv?.is_locked === true);
@@ -144,9 +168,12 @@ export default function InvoicePage() {
       console.error(err);
       alert("Error loading invoice data");
     } finally {
-      setLoading(false);
+      if (!skipLoading) setLoading(false);
     }
   }
+
+  // Refresh for modal – skip loading state
+  const refreshInvoice = () => loadInvoice(true);
 
   // ----- Lock / Unlock -----
   const toggleLock = async () => {
@@ -319,6 +346,9 @@ export default function InvoicePage() {
               <div className="mt-0.5 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-1.5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 min-w-0"><AlertCircle size={12} className="text-amber-500 shrink-0" /><p className="text-[11px] font-medium text-amber-800 truncate">Fully paid. Lock to prevent changes.</p></div>
                 <button onClick={toggleLock} disabled={locking} className="rounded-lg bg-amber-600 text-white px-2.5 py-1 text-[10px] font-black hover:bg-amber-700">{locking ? "..." : "Lock"}</button>
+                <button onClick={() => { setShowFinancialsModal(true); setFabOpen(false); }} className="flex items-center gap-2 rounded-xl bg-emerald-600 text-white font-bold px-3 py-1.5 text-xs shadow-md hover:bg-emerald-500 transition-colors">
+                  <DollarSign size={12} /> <span>Project Payments</span>
+                </button>
               </div>
             ) : null}
           </div>
@@ -517,6 +547,17 @@ export default function InvoicePage() {
         </div>
 
         <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSave={recordPayment} remainingBalance={remainingBalance} saving={savingPayment} />
+
+        {/* Secondary Modals – render only when estimateId is available */}
+        {showFinancialsModal && estimateId && (
+          <ProjectFinancialsModal
+            isOpen={showFinancialsModal}
+            onClose={() => setShowFinancialsModal(false)}
+            estimateId={estimateId}
+            estimateTotal={invoice?.total || 0}
+            onRefresh={refreshInvoice}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );
