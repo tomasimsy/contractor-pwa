@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, ClipboardList, Settings } from "lucide-react";
+import { LayoutDashboard, FileText, ClipboardList, Settings, Briefcase} from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -12,7 +12,8 @@ export default function BottomNav() {
     { label: "Estimates", href: "/estimates", icon: ClipboardList },
     { label: "Invoices", href: "/invoices", icon: FileText },
     { label: "Settings", href: "/settings", icon: Settings },
-  ];
+    { label: "Sales", href: "/sales", icon: Briefcase },
+   ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/60 bg-white/90 backdrop-blur-md pb-safe">
