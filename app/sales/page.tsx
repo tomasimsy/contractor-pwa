@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { Search, Copy, Check, ChevronDown, ChevronUp, Star, Bookmark, Share2, Filter, X, BookOpen } from "lucide-react";
+ import { Search, Copy, Check, ChevronDown, ChevronUp, Star, Bookmark, BookOpen, Share2, Filter, X, Target, FileText, MessageSquare, CheckCircle, AlertTriangle, BarChart3, Lightbulb, Users, Clock, Phone, Mail } from "lucide-react";
 
 // Types
+// Types (same as before, plus new ones for training)
 type Objection = {
   id: string;
   title: string;
@@ -692,6 +693,256 @@ export default function SalesPlaybook() {
             ))}
           </div>
         </section>
+           {/* ===== NEW: New Sales Rep Section ===== */}
+      <section className="mt-12 bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/60 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-emerald-100 rounded-xl text-emerald-700">
+            <Users size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">🚀 New Sales Rep Onboarding</h2>
+            <p className="text-sm text-slate-400">Master the sales process, practice key scenarios, and track your progress</p>
+          </div>
+        </div>
+
+        {/* 1. Sales Process Overview */}
+        <div className="mb-8">
+          <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+            <Target size={16} /> The 5-Step Sales Process
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {[
+              { step: "Discovery", icon: <MessageSquare size={16} />, desc: "Uncover needs, pain points, and budget" },
+              { step: "Presentation", icon: <FileText size={16} />, desc: "Show your solution and value proposition" },
+              { step: "Objection Handling", icon: <AlertTriangle size={16} />, desc: "Address concerns with confidence" },
+              { step: "Closing", icon: <CheckCircle size={16} />, desc: "Ask for commitment and next steps" },
+              { step: "Follow-up", icon: <Phone size={16} />, desc: "Nurture until decision" }
+            ].map((s, i) => (
+              <div key={i} className="bg-gradient-to-br from-slate-50 to-white p-4 rounded-xl border border-slate-200/60 hover:border-emerald-200 transition-all">
+                <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
+                  <span className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded">0{i+1}</span>
+                  {s.icon}
+                  {s.step}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+{/* 1. Sales Process Overview with real example */}
+<div className="mb-8">
+  <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+    <Target size={16} /> The 5-Step Sales Process – Real Example: Building a Deck
+  </h3>
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    {[
+      { 
+        step: "Discovery", 
+        icon: <MessageSquare size={16} />, 
+        desc: "Uncover needs, pain points, budget",
+        example: "Ask: 'What do you want to use the deck for? Entertaining? Kids play area? What's your budget range? Have you gotten other quotes?'"
+      },
+      { 
+        step: "Presentation", 
+        icon: <FileText size={16} />, 
+        desc: "Show your solution and value proposition",
+        example: "Present 3 deck options (pressure-treated, composite, premium) with material samples, design sketches, and a clear timeline."
+      },
+      { 
+        step: "Objection Handling", 
+        icon: <AlertTriangle size={16} />, 
+        desc: "Address concerns with confidence",
+        example: "Client says: 'Composite is too expensive.' Respond: 'I understand. Let's compare the 20-year cost – composite needs no staining or sealing, saving you $2K over time.'"
+      },
+      { 
+        step: "Closing", 
+        icon: <CheckCircle size={16} />, 
+        desc: "Ask for commitment and next steps",
+        example: "If everything looks good, when would you like to schedule the build? We can reserve materials and lock in this price for 30 days."
+      },
+      { 
+        step: "Follow-up", 
+        icon: <Phone size={16} />, 
+        desc: "Nurture until decision",
+        example: "Send an email recap of the meeting, attach the proposal, and call in 3 days to see if any questions came up. Offer to walk them through the timeline again."
+      }
+    ].map((s, i) => (
+      <div key={i} className="bg-gradient-to-br from-slate-50 to-white p-4 rounded-xl border border-slate-200/60 hover:border-emerald-200 transition-all group">
+        <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
+          <span className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded">0{i+1}</span>
+          {s.icon}
+          {s.step}
+        </div>
+        <p className="text-xs text-slate-500 mt-1">{s.desc}</p>
+        <div className="mt-2 p-2 bg-emerald-50/60 rounded-lg border border-emerald-100/40 text-[10px] text-slate-600 italic">
+          <span className="font-bold text-emerald-700">💡 Example:</span> {s.example}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+        {/* 2. Role-Play Scenarios */}
+        <div className="mb-8">
+          <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+            <Users size={16} /> Role-Play Scenarios
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-amber-50 to-white p-4 rounded-xl border border-amber-200/60">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-amber-600 text-xl">🎭</span>
+                <span className="font-bold text-sm text-amber-800">The Price Shopper</span>
+              </div>
+              <p className="text-sm text-slate-600">"Your quote is 20% higher than another contractor."</p>
+              <p className="text-xs text-slate-400 mt-1">Practice: Compare scope, materials, and warranty – not just price.</p>
+            </div>
+            <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-xl border border-blue-200/60">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-blue-600 text-xl">🎭</span>
+                <span className="font-bold text-sm text-blue-800">The Indecisive Couple</span>
+              </div>
+              <p className="text-sm text-slate-600">"We need to think about it and talk to our kids."</p>
+              <p className="text-xs text-slate-400 mt-1">Practice: Ask clarifying questions and offer a joint meeting.</p>
+            </div>
+            <div className="bg-gradient-to-br from-rose-50 to-white p-4 rounded-xl border border-rose-200/60">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-rose-600 text-xl">🎭</span>
+                <span className="font-bold text-sm text-rose-800">The Skeptic</span>
+              </div>
+              <p className="text-sm text-slate-600">"How do I know you'll do quality work?"</p>
+              <p className="text-xs text-slate-400 mt-1">Practice: Share portfolio, references, and warranty details.</p>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-50 to-white p-4 rounded-xl border border-emerald-200/60">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-emerald-600 text-xl">🎭</span>
+                <span className="font-bold text-sm text-emerald-800">The Time-Bound Client</span>
+              </div>
+              <p className="text-sm text-slate-600">"We have a wedding in 3 months – can you guarantee completion?"</p>
+              <p className="text-xs text-slate-400 mt-1">Practice: Set realistic expectations and communicate proactively.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Script Templates */}
+        <div className="mb-8">
+          <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+            <FileText size={16} /> Script Templates
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60">
+              <div className="flex items-center gap-2 mb-2">
+                <Phone size={14} className="text-emerald-600" />
+                <span className="font-bold text-xs text-slate-600">📞 Phone Call – Follow-up</span>
+              </div>
+              <div className="text-xs text-slate-500 space-y-1 italic">
+                <p>"Hi [Name], this is [Your Name] from [Company]. I'm following up on our recent conversation about your [project]. Have you had a chance to think it over?"</p>
+                <p>"I wanted to make sure you have everything you need to make a confident decision. Do you have any questions I can help with?"</p>
+              </div>
+            </div>
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60">
+              <div className="flex items-center gap-2 mb-2">
+                <Mail size={14} className="text-emerald-600" />
+                <span className="font-bold text-xs text-slate-600">✉️ Email – Proposal Follow-up</span>
+              </div>
+              <div className="text-xs text-slate-500 space-y-1 italic">
+                <p>"Subject: Your Remodeling Proposal – Next Steps"</p>
+                <p>"Hi [Name], I've attached our detailed proposal and scope of work. I'd be happy to walk you through it line by line. Let's schedule a quick call to address any questions."</p>
+              </div>
+            </div>
+            <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/60 sm:col-span-2">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageSquare size={14} className="text-emerald-600" />
+                <span className="font-bold text-xs text-slate-600">💬 SMS – Quick Check-in</span>
+              </div>
+              <div className="text-xs text-slate-500 space-y-1 italic">
+                <p>"Hi [Name]! Just checking in – any thoughts on the proposal? I'm here if you have questions. No pressure, just want to make sure you're comfortable."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. New Rep Checklist */}
+        <div className="mb-8">
+          <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+            <CheckCircle size={16} /> First-Week Checklist
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              "✓ Memorize the top 5 most common objections",
+              "✓ Practice your discovery questions with a mentor",
+              "✓ Review at least 3 past project portfolios",
+              "✓ Shadow a senior rep on 2 sales calls",
+              "✓ Complete the company product & process training",
+              "✓ Prepare your own 'Why Choose Us' pitch"
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-slate-600 bg-white rounded-lg px-3 py-2 border border-slate-200/60">
+                <span className="text-emerald-500 text-base">✓</span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 5. Key Metrics to Track */}
+        <div className="mb-8">
+          <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+            <BarChart3 size={16} /> Key Performance Metrics
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: "Conversion Rate", value: "40%", desc: "Estimates → Signed Contracts" },
+              { label: "Avg. Deal Size", value: "$35K", desc: "Average project value" },
+              { label: "Avg. Sales Cycle", value: "21 days", desc: "From first contact to close" },
+              { label: "Follow-up Rate", value: "90%", desc: "% of leads contacted within 24hrs" }
+            ].map((m, i) => (
+              <div key={i} className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 text-center">
+                <div className="text-lg font-black text-emerald-700">{m.value}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{m.label}</div>
+                <div className="text-[9px] text-slate-400 mt-0.5">{m.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 6. Common Mistakes & Fixes */}
+        <div>
+          <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+            <AlertTriangle size={16} /> Common Mistakes & How to Avoid Them
+          </h3>
+          <div className="space-y-2">
+            {[
+              { mistake: "Talking too much about features instead of benefits", fix: "Focus on how each feature solves a problem" },
+              { mistake: "Not asking enough questions", fix: "Use the discovery questions above – listen more than you talk" },
+              { mistake: "Giving a discount without trade-offs", fix: "Offer value-adds or phased work instead of straight price cuts" },
+              { mistake: "Forgetting to follow up", fix: "Set a calendar reminder for every lead within 2 days" },
+              { mistake: "Sounding like a salesperson", fix: "Be a consultant – educate, don't persuade" }
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white rounded-lg px-4 py-3 border border-slate-200/60 hover:border-amber-200 transition-all">
+                <div className="flex items-center gap-2 text-sm text-slate-700 sm:w-1/2">
+                  <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+                  <span className="font-medium">{item.mistake}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500 sm:w-1/2">
+                  <Lightbulb size={14} className="text-emerald-500 shrink-0" />
+                  <span>{item.fix}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Reference Card */}
+        <div className="mt-6 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+              <Star size={20} className="text-amber-500" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-emerald-800">Quick Reference</p>
+              <p className="text-xs text-emerald-600/80">Keep this playbook open during calls. Use the search bar above to find any objection instantly.</p>
+            </div>
+          </div>
+        </div>
+      </section>
       </main>
 
       {/* Footer */}
@@ -701,4 +952,6 @@ export default function SalesPlaybook() {
       </footer>
     </div>
   );
+
+  
 }
